@@ -1,6 +1,7 @@
 import { fetchWithTimeout, isFetchTimeoutError } from "@/lib/api/fetch-with-timeout";
 import { jsonError, jsonSuccess } from "@/lib/api/envelope";
 import { readRequestJson, safeJson } from "@/lib/api/safe-json";
+import { requireApiUser } from "@/lib/auth/session";
 import { getOllamaConfig } from "@/lib/ai/ollama-config";
 import { createOperationId, startTimer } from "@/lib/logging/shared";
 import { serverLog, serverLogError } from "@/lib/logging/server";
@@ -38,6 +39,12 @@ export async function POST(request: Request) {
   });
 
   try {
+    const unauthenticatedResponse = await requireApiUser(requestId);
+
+    if (unauthenticatedResponse) {
+      return unauthenticatedResponse;
+    }
+
     const bodyResult = await readRequestJson<EmbedRequestBody>(request);
 
     if (!bodyResult.ok) {

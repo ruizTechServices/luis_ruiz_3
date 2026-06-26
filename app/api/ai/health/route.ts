@@ -1,5 +1,6 @@
 import { fetchWithTimeout, isFetchTimeoutError } from "@/lib/api/fetch-with-timeout";
 import { safeJson } from "@/lib/api/safe-json";
+import { requireApiUser } from "@/lib/auth/session";
 import { getOllamaConfig } from "@/lib/ai/ollama-config";
 import { createOperationId, startTimer } from "@/lib/logging/shared";
 import { serverLog, serverLogError } from "@/lib/logging/server";
@@ -37,6 +38,12 @@ export async function GET(request: Request) {
   });
 
   try {
+    const unauthenticatedResponse = await requireApiUser(requestId);
+
+    if (unauthenticatedResponse) {
+      return unauthenticatedResponse;
+    }
+
     const ollamaResponse = await fetchWithTimeout(`${baseUrl}/api/version`, {
       method: "GET",
       timeoutMs: 4_000,
