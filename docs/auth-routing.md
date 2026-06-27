@@ -78,6 +78,34 @@ update, and delete policies scoped to `(select auth.uid()) = user_id`.
 Child dashboard tables with references to projects or clients also check that
 referenced rows belong to the same authenticated user.
 
+## Logging
+
+Every auth touchpoint emits structured logs via `lib/logging/server.ts`
+(`serverLog`/`serverLogError`), matching the convention already used by
+`app/api/ai/*`. Logs are JSON lines written to `console.info/warn/error/debug`,
+so they show up in Vercel's function logs.
+
+- `auth.actions` (`app/auth/actions.ts`): `signin_password_started/succeeded/failed`,
+  `signup_password_started/succeeded/failed`, `signin_google_started`,
+  `signin_google_redirect_succeeded` (includes `redirectToHost`, the OAuth
+  redirect target's host — the field to check first when OAuth sign-in lands
+  somewhere unexpected), `signin_google_failed`, `signout_started/succeeded`.
+- `auth.callback` (`app/auth/callback/route.ts`): `request_started` (includes
+  `hasCode`, `requestOrigin`, `forwardedHost`), `code_exchange_succeeded`,
+  `code_exchange_failed`, `request_failed` (missing `code`). If this scope
+  never logs anything during a repro window, Supabase never reached the
+  callback route at all (e.g. it fell back to a different redirect target).
+- `auth.proxy` (`lib/supabase/proxy.ts`): `redirect_to_login`,
+  `unauthenticated_api_request`, `redirect_authenticated_to_account`,
+  `pass_through` (`debug` level — fires on nearly every request).
+- `auth.session` (`lib/auth/session.ts`): `get_claims_failed` (unexpected
+  Supabase error), `no_claims_present` (`debug` level — expected for
+  anonymous visitors).
+
+No secrets are logged: passwords are never included, and only the verified
+JWT `sub`/`email` claims are treated as loggable, consistent with how
+`getAuthenticatedUser` already surfaces them.
+
 ## Supabase Migrations
 
 These migrations were applied to the `luis-ruiz` Supabase project:

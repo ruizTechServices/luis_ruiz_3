@@ -3,6 +3,9 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { isAuthPath, isProtectedApiPath, isProtectedPagePath, LOGIN_PATH } from "@/lib/auth/routes";
 import { getSupabasePublishableKey, getSupabaseUrl } from "@/lib/supabase/env";
+import { serverLog } from "@/lib/logging/server";
+
+const PROXY_SCOPE = "auth.proxy";
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -37,6 +40,13 @@ export async function updateSession(request: NextRequest) {
   const isAuthenticated = Boolean(data?.claims?.sub);
 
   if (!isAuthenticated && isProtectedApiPath(pathname)) {
+    serverLog({
+      scope: PROXY_SCOPE,
+      level: "warn",
+      event: "unauthenticated_api_request",
+      metadata: { pathname },
+    });
+
     return Response.json(
       {
         ok: false,
@@ -55,6 +65,13 @@ export async function updateSession(request: NextRequest) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = LOGIN_PATH;
     redirectUrl.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
+
+    serverLog({
+      scope: PROXY_SCOPE,
+      event: "redirect_to_login",
+      metadata: { pathname, next: redirectUrl.searchParams.get("next") },
+    });
+
     return NextResponse.redirect(redirectUrl);
   }
 
@@ -62,12 +79,22 @@ export async function updateSession(request: NextRequest) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/account";
     redirectUrl.search = "";
+
+    serverLog({
+      scope: PROXY_SCOPE,
+      event: "redirect_authenticated_to_account",
+      metadata: { pathname },
+    });
+
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (!requiresAuth && !isAuthPath(pathname)) {
-    return response;
-  }
+  serverLog({
+    scope: PROXY_SCOPE,
+    level: "debug",
+    event: "pass_through",
+    metadata: { pathname, requiresAuth, isAuthenticated },
+  });
 
   return response;
 }

@@ -6,6 +6,9 @@ import { cache } from "react";
 import { jsonError } from "@/lib/api/envelope";
 import { LOGIN_PATH } from "@/lib/auth/routes";
 import { createClient } from "@/lib/supabase/server";
+import { serverLog, serverLogError } from "@/lib/logging/server";
+
+const SESSION_SCOPE = "auth.session";
 
 export interface AuthenticatedUser {
   id: string;
@@ -18,6 +21,12 @@ export const getAuthenticatedUser = cache(async (): Promise<AuthenticatedUser | 
   const claims = data?.claims;
 
   if (error || !claims?.sub) {
+    if (error) {
+      serverLogError({ scope: SESSION_SCOPE, event: "get_claims_failed", error });
+    } else {
+      serverLog({ scope: SESSION_SCOPE, level: "debug", event: "no_claims_present" });
+    }
+
     return null;
   }
 

@@ -121,6 +121,45 @@ const checks = [
     "app/api/ai/health/route.ts",
     (source) => hasAll(source, ["requireApiUser", "await requireApiUser(requestId)"]),
   ],
+  [
+    "auth actions log sign-in/up/out and the Google OAuth redirect target",
+    "app/auth/actions.ts",
+    (source) =>
+      hasAll(source, [
+        "serverLog",
+        "ACTION_SCOPE",
+        "signin_google_redirect_succeeded",
+        "redirectToHost",
+      ]),
+  ],
+  [
+    "OAuth callback route logs code exchange outcome",
+    "app/auth/callback/route.ts",
+    (source) =>
+      hasAll(source, [
+        "serverLog",
+        "ROUTE_SCOPE",
+        "code_exchange_succeeded",
+        "code_exchange_failed",
+      ]),
+  ],
+  [
+    "proxy logs every auth decision branch",
+    "lib/supabase/proxy.ts",
+    (source) =>
+      hasAll(source, [
+        "serverLog",
+        "PROXY_SCOPE",
+        "redirect_to_login",
+        "unauthenticated_api_request",
+        "pass_through",
+      ]),
+  ],
+  [
+    "session helper logs claim resolution failures",
+    "lib/auth/session.ts",
+    (source) => hasAll(source, ["serverLogError", "get_claims_failed", "SESSION_SCOPE"]),
+  ],
 ];
 
 const failures = [];
