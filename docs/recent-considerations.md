@@ -29,8 +29,12 @@ plus the current frontend route model. Some tables have broad SQL grants to
   `lib/browser-db/*`; no current app code reads Supabase `conversations`,
   `chat_messages`, or `chat_embeddings`.
 - No current app code uses Supabase Storage APIs.
-- `app/page.tsx` is currently static; public portfolio/blog/contact tables are
-  backend-ready but not wired into the visible homepage yet.
+- **[Updated 2026-06-28 by maintenance agent]** `app/page.tsx` is **no longer
+  static**. As of commit `05c576a` it reads live Supabase data through
+  `lib/public-content/data.ts` → `getHomeContent()` (availability text from
+  `site_settings`, featured `projects`, recent `blog_posts`). The public
+  projects/blog/contact pages are now wired to these tables as well. The
+  remainder of this document's access/visibility analysis still holds.
 
 ## Table Visibility Matrix
 
@@ -51,8 +55,8 @@ plus the current frontend route model. Some tables have broad SQL grants to
 | `dashboard_clients` | Authenticated user-owned clients | 0 | No access | 0 rows for sampled non-Gio user | 0 rows for Gio | Owner-scoped authenticated CRUD | Current dashboard reads counts from this table. | Keep. Owner-scoped product surface. |
 | `dashboard_leads` | Authenticated user-owned leads | 0 | No access | 0 rows for sampled non-Gio user | 0 rows for Gio | Owner-scoped authenticated CRUD | Current dashboard reads counts from this table. | Keep. Owner-scoped product surface. |
 | `dashboard_money_entries` | Authenticated user-owned financial entries | 0 | No access | 0 rows for sampled non-Gio user | 0 rows for Gio | Owner-scoped authenticated CRUD with project/client ownership checks | Current dashboard reads counts from this table. | Keep. Owner-scoped product surface. |
-| `dashboard_decisions` | Authenticated user-owned decisions | 4 | No access | 0 rows for sampled non-Gio user | 0 rows for Gio | Owner-scoped authenticated CRUD with project ownership checks | Current dashboard reads counts from this table. | Keep, but investigate ownership if Gio expected to see the 4 existing rows. |
-| `dashboard_system_links` | Authenticated user-owned system links | 9 | No access | 0 rows for sampled non-Gio user | 0 rows for Gio | Owner-scoped authenticated CRUD | Current dashboard reads counts from this table. | Keep, but investigate ownership if Gio expected to see the 9 existing rows. |
+| `dashboard_decisions` | Authenticated user-owned decisions | 4 | No access | 0 rows for non-Gio | **4 rows for Gio (fixed 2026-06-28)** | Owner-scoped authenticated CRUD with project ownership checks | Current dashboard reads counts from this table. | Keep. Ownership backfilled to Gio — see note below. |
+| `dashboard_system_links` | Authenticated user-owned system links | 9 | No access | 0 rows for non-Gio | **9 rows for Gio (fixed 2026-06-28)** | Owner-scoped authenticated CRUD | Current dashboard reads counts from this table. | Keep. Ownership backfilled to Gio — see note below. |
 | `user_profiles` | Auth user profile rows | 19 | No access | Own profile only; sampled non-Gio saw 1 row | Own profile only; Gio saw 1 row | Authenticated users may update safe profile fields only | Trigger-created on signup through `handle_new_user()`. | Keep. Auth/profile backbone. |
 | `conversations` | Legacy/server-side AI conversation records | 32 | No access | Owner rows only; sampled non-Gio saw 0 | Owner rows only; Gio saw 32 | Owner-scoped authenticated CRUD | Current app appears to use browser IndexedDB instead. | Future/uncertain candidate. Confirm whether legacy AI data should be migrated, archived, or revived. |
 | `chat_messages` | Legacy/server-side AI chat messages | 28 | No access | Owner rows only; sampled non-Gio saw 0 | Owner rows only; Gio saw 28 | Owner-scoped authenticated CRUD | Current app appears to use browser IndexedDB instead. | Future/uncertain candidate. Keep until AI persistence direction is decided. |
@@ -88,10 +92,16 @@ schema cleanup.
 
 - Strong review: `journal` and `todos`. Each has 54 rows, is Gio-only, and is
   not referenced by the current app. Export or archive before deletion.
-- Investigate ownership: `dashboard_decisions` has 4 rows and
-  `dashboard_system_links` has 9 rows, but Gio's simulated session saw 0. If
-  Gio expects dashboard data, inspect which auth user owns those rows before
-  building more dashboard UI.
+- Ownership (RESOLVED 2026-06-28): `dashboard_decisions` (4 rows) and
+  `dashboard_system_links` (9 rows) were seeded on 2026-05-20 with
+  `user_id = NULL`, before the `user_id default auth.uid()` ownership column was
+  added (2026-06-26). RLS gates on `(select auth.uid()) = user_id`, so NULL-owner
+  rows were invisible to Gio's session. Migration
+  `20260628122120_backfill_orphaned_dashboard_ownership.sql` set those rows'
+  `user_id` to Gio's verified uid `f6794b1c-0ed7-4f3c-9cad-9c2776de83e4`; all 13
+  rows are now Gio-owned and visible. Future seeds into `dashboard_*` tables must
+  set `user_id` explicitly (service-role inserts bypass the `auth.uid()` default
+  and would re-orphan rows).
 - Future/uncertain: `conversations`, `chat_messages`, `chat_embeddings`,
   `round_robin_sessions`, and `round_robin_messages`. These contain data but
   are not used by the current app path. Keep until the AI persistence direction
