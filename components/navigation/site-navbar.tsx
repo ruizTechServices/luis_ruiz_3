@@ -2,13 +2,19 @@ import Link from "next/link";
 
 import { navLinks } from "@/lib/navigation/nav-links";
 import { getAuthenticatedUser } from "@/lib/auth/session";
+import { isGioAdminEmail } from "@/lib/auth/admin";
 
 export async function SiteNavbar() {
   const user = await getAuthenticatedUser();
   const isAuthenticated = Boolean(user);
+  const isAdmin = isGioAdminEmail(user?.email);
   const visibleLinks = navLinks.filter((link) => {
     if (link.visibility === "always") {
       return true;
+    }
+
+    if (link.visibility === "admin") {
+      return isAdmin;
     }
 
     return link.visibility === "authenticated" ? isAuthenticated : !isAuthenticated;

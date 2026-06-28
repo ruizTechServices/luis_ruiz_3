@@ -2,7 +2,7 @@ export interface NavLink {
   label: string;
   href: string;
   ariaLabel: string;
-  visibility: "always" | "anonymous" | "authenticated";
+  visibility: "always" | "anonymous" | "authenticated" | "admin";
 }
 
 export const navLinks = [
@@ -10,6 +10,24 @@ export const navLinks = [
     label: "Home",
     href: "/",
     ariaLabel: "Go to home page",
+    visibility: "always",
+  },
+  {
+    label: "Blog",
+    href: "/blog",
+    ariaLabel: "Go to blog page",
+    visibility: "always",
+  },
+  {
+    label: "Projects",
+    href: "/projects",
+    ariaLabel: "Go to projects page",
+    visibility: "always",
+  },
+  {
+    label: "Contact",
+    href: "/contact",
+    ariaLabel: "Go to contact page",
     visibility: "always",
   },
   {
@@ -23,6 +41,12 @@ export const navLinks = [
     href: "/dashboard",
     ariaLabel: "Go to protected dashboard page",
     visibility: "authenticated",
+  },
+  {
+    label: "Admin",
+    href: "/admin",
+    ariaLabel: "Go to admin page",
+    visibility: "admin",
   },
   {
     label: "Sign in",

@@ -37,7 +37,7 @@ const checks = [
     "lib/auth/routes.ts",
     (source) =>
       hasAll(source, [
-        'const PROTECTED_PAGE_PREFIXES = ["/account", "/dashboard"]',
+        'const PROTECTED_PAGE_PREFIXES = ["/account", "/dashboard", "/admin"]',
         'const PROTECTED_API_PREFIXES = ["/api/ai"]',
         "getSafeRedirectPath",
         'value.startsWith("//")',

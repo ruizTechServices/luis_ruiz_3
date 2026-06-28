@@ -1,5 +1,8 @@
+import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth/session";
-import { getDashboardMetrics } from "@/lib/dashboard/data";
+import { DASHBOARD_PAGE_TABLES, getDashboardMetrics } from "@/lib/dashboard/data";
 
 export default async function DashboardPage() {
   const user = await requireUser();
@@ -26,6 +29,13 @@ export default async function DashboardPage() {
               {metric.count}
             </p>
           </article>
+        ))}
+      </section>
+      <section className="grid gap-3 sm:grid-cols-2">
+        {DASHBOARD_PAGE_TABLES.map((table) => (
+          <Button asChild key={table.slug} variant="outline">
+            <Link href={`/dashboard/${table.slug}`}>{table.label}</Link>
+          </Button>
         ))}
       </section>
     </main>

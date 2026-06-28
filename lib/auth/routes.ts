@@ -1,7 +1,7 @@
 export const LOGIN_PATH = "/login";
 export const DEFAULT_AUTH_REDIRECT_PATH = "/account";
 
-const PROTECTED_PAGE_PREFIXES = ["/account", "/dashboard"];
+const PROTECTED_PAGE_PREFIXES = ["/account", "/dashboard", "/admin"];
 const PROTECTED_API_PREFIXES = ["/api/ai"];
 
 export function isProtectedPagePath(pathname: string): boolean {
