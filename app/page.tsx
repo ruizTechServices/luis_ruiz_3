@@ -1,3 +1,5 @@
+// import { OrinNanoChatCard } from "@/components/home/orin-nano-chat-card";
+
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center gap-6 px-6 py-24">
