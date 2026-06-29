@@ -125,11 +125,10 @@ As of the current codebase these tables ARE referenced by the admin interface:
 - `documents` and `gios_context` — now surfaced read-only in the admin console
   (`/admin/documents`, `/admin/gios-context`, `readOnly: true`).
 - `conversations`, `chat_messages`, `chat_embeddings`, `round_robin_sessions`,
-  `round_robin_messages` — now counted read-only by `getAdminOverview()` in
-  `lib/admin/data.ts` and displayed on the **Legacy AI inventory** page
-  (`/admin/legacy-ai`). They are therefore no longer orphaned and have been
-  removed from `TABLES_TO_DELETE.md`. The underlying AI-persistence decision
-  (IndexedDB vs. reviving these server-side tables) is still open.
+  `round_robin_messages` are not referenced by the active app after removal of
+  the admin count-only viewer. They are back in `TABLES_TO_DELETE.md` for an
+  export-then-drop cleanup decision. The current Orin chat path uses IndexedDB
+  in `lib/browser-db/*`.
 
 Row counts were re-verified live on 2026-06-29 with exact `COUNT(*)` and match
 the figures in the matrix above (e.g. `journal` 54, `todos` 54,

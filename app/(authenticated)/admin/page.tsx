@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getAdminOverview } from "@/lib/admin/data";
 
 export default async function AdminPage() {
-  const { adminCounts, legacyCounts } = await getAdminOverview();
+  const { adminCounts } = await getAdminOverview();
 
   return (
     <main className="mx-auto grid min-h-screen w-full max-w-5xl content-start gap-8 px-6 py-16">
@@ -21,19 +21,6 @@ export default async function AdminPage() {
             <p className="mt-3 text-2xl font-semibold tracking-normal">{item.count}</p>
           </Link>
         ))}
-      </section>
-      <section className="grid gap-3">
-        <Link className="text-lg font-semibold tracking-normal hover:underline" href="/admin/legacy-ai">
-          Legacy AI inventory
-        </Link>
-        <div className="grid gap-2 md:grid-cols-2">
-          {legacyCounts.map((item) => (
-            <article className="rounded-md border border-border p-4" key={item.table}>
-              <h2 className="text-sm font-medium text-muted-foreground">{item.table}</h2>
-              <p className="mt-2 text-2xl font-semibold tracking-normal">{item.count}</p>
-            </article>
-          ))}
-        </div>
       </section>
     </main>
   );

@@ -8,21 +8,10 @@ import { dynamicTable } from "@/lib/supabase/dynamic-table";
 export type AdminRowValue = string | number | boolean | null | string[];
 export type AdminRow = Record<string, AdminRowValue>;
 
-const LEGACY_TABLES = [
-  "conversations",
-  "chat_messages",
-  "chat_embeddings",
-  "round_robin_sessions",
-  "round_robin_messages",
-] as const;
-
 export async function getAdminOverview() {
   await requireGioAdmin();
 
-  const [adminCounts, legacyCounts] = await Promise.all([
-    Promise.all(ADMIN_TABLES.map((config) => countTable(config.table))),
-    Promise.all(LEGACY_TABLES.map((table) => countTable(table))),
-  ]);
+  const adminCounts = await Promise.all(ADMIN_TABLES.map((config) => countTable(config.table)));
 
   return {
     adminCounts: ADMIN_TABLES.map((config, index) => ({
@@ -31,7 +20,6 @@ export async function getAdminOverview() {
       description: config.description,
       count: adminCounts[index],
     })),
-    legacyCounts: LEGACY_TABLES.map((table, index) => ({ table, count: legacyCounts[index] })),
   };
 }
 

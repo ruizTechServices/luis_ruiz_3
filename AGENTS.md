@@ -37,7 +37,7 @@ Admin authority is reserved exclusively for Gio, identified by the verified Supa
       actions.ts          → Server actions for admin CRUD
       page.tsx            → Admin overview (counts via getAdminOverview)
       /blog-posts /projects /site-settings /contactlist /journal /todos
-      /comments /votes /documents /gios-context /legacy-ai
+      /comments /votes /documents /gios-context
     /dashboard            → Per-user business dashboard
       /projects /clients /leads /money /decisions /links
   /account /login /auth/callback   → Public auth entry points
@@ -90,11 +90,11 @@ Project ref `huyhgdsjpdjzokjwaspb`. **Row counts below are exact `COUNT(*)` valu
 | `documents` | 1 | Admin vector/doc knowledge base | ACTIVE — admin read-only (match_documents) |
 | `gios_context` | 26 | Gio-specific context vectors | ACTIVE — admin read-only (match_gios_context) |
 | `user_profiles` | 19 | Auth profile rows | ACTIVE — created by handle_new_user() trigger |
-| `conversations` | 32 | Legacy server-side AI conversations | ACTIVE (admin read-only) — legacy-ai inventory |
-| `chat_messages` | 28 | Legacy server-side AI messages | ACTIVE (admin read-only) — legacy-ai inventory |
-| `chat_embeddings` | 18 | Legacy server-side AI embeddings | ACTIVE (admin read-only) — legacy-ai inventory |
-| `round_robin_sessions` | 27 | Legacy multi-model AI sessions | ACTIVE (admin read-only) — legacy-ai inventory |
-| `round_robin_messages` | 154 | Messages for round-robin sessions | ACTIVE (admin read-only) — legacy-ai inventory |
+| `conversations` | 32 | Retired server-side AI conversations | ORPHANED — see TABLES_TO_DELETE.md |
+| `chat_messages` | 28 | Retired server-side AI messages | ORPHANED — see TABLES_TO_DELETE.md |
+| `chat_embeddings` | 18 | Retired server-side AI embeddings | ORPHANED — see TABLES_TO_DELETE.md |
+| `round_robin_sessions` | 27 | Retired multi-model AI sessions | ORPHANED — see TABLES_TO_DELETE.md |
+| `round_robin_messages` | 154 | Messages for retired round-robin sessions | ORPHANED — see TABLES_TO_DELETE.md |
 | `dashboard_projects` | 0 | User-owned dashboard projects | ACTIVE — owner-scoped CRUD |
 | `dashboard_clients` | 0 | User-owned clients | ACTIVE — owner-scoped CRUD |
 | `dashboard_leads` | 0 | User-owned leads | ACTIVE — owner-scoped CRUD |
@@ -103,13 +103,16 @@ Project ref `huyhgdsjpdjzokjwaspb`. **Row counts below are exact `COUNT(*)` valu
 | `dashboard_system_links` | 9 | User-owned system links | ACTIVE — owner-scoped CRUD |
 | `project_blog_links` | 0 | Empty project↔blog join table | ORPHANED — see TABLES_TO_DELETE.md |
 
-> The only orphaned table is `project_blog_links` (0 rows, 0 code references). It is preserved as a plausibly future-facing feature; see `TABLES_TO_DELETE.md`.
+> Orphaned tables are tracked in `TABLES_TO_DELETE.md`. The retired server-side
+> AI tables still hold data and require export/captured-DDL handling before any
+> drop; `project_blog_links` is empty and preserved only as a possible future
+> linking stub.
 
 ## 5. Current State of the Project
 Working and live in code:
 - **Auth:** Supabase SSR auth with Google OAuth, structured logging across the flow, server-side route protection via `proxy.ts` → `lib/supabase/proxy.ts`, and the `(authenticated)` route group enforcing `requireUser()`. Protected prefixes: `/account`, `/dashboard`. `/api/ai/*` enforces `requireApiUser()`.
 - **Public site:** Home page (`app/page.tsx`) is **dynamic** as of commit `05c576a` — it reads live Supabase data through `lib/public-content/data.ts` (`getHomeContent()`): availability text from `site_settings`, featured `projects`, recent `blog_posts`, plus comment/vote stats. Public projects, blog, and contact pages are wired to their tables.
-- **Admin console (`/admin`, Gio-only):** Generic config-driven CRUD over `ADMIN_TABLES` (`lib/admin/config.ts`). Editable: blog_posts, projects, site_settings, journal, todos. Insert-disabled (view/moderate): contactlist, comments, votes. Read-only: documents, gios_context. A dedicated read-only **Legacy AI inventory** page (`/admin/legacy-ai`) surfaces counts for the five legacy AI tables.
+- **Admin console (`/admin`, Gio-only):** Generic config-driven CRUD over `ADMIN_TABLES` (`lib/admin/config.ts`). Editable: blog_posts, projects, site_settings, journal, todos. Insert-disabled (view/moderate): contactlist, comments, votes. Read-only: documents, gios_context.
 - **Dashboard (`/dashboard`, per-user):** Owner-scoped reads through `lib/dashboard/data.ts`, filtered by verified `auth.uid()`.
 - **DB security:** RLS hardened across all tables; Gio-admin access gated by `is_gio_admin()` on verified email. Storage: `photos` bucket public (portfolio media), `user_profile_pictures` private (owner-scoped).
 
@@ -126,7 +129,7 @@ Recent prior commits for context: `05c576a` staged Supabase data into public + a
 Uncommitted working-tree changes at run time: modified `AGENTS.md`, `app/layout.tsx`, `docs/recent-considerations.md`, `lib/auth/admin.ts`, `lib/public-content/data.ts`, and the entire `orin-nano/` folder; untracked Phase 2 migrations and `migrations_down/`.
 
 ## 8. Known Issues / Open Questions
-- **AI persistence direction is undecided.** Current Orin chat uses IndexedDB (`lib/browser-db/*`); the five legacy server-side AI tables (`conversations`, `chat_messages`, `chat_embeddings`, `round_robin_sessions`, `round_robin_messages`) still hold data and are now shown read-only in `/admin/legacy-ai`. Decide whether to migrate, productize, or retire them before any cleanup.
+- **Retired server-side AI tables still hold data.** Current Orin chat uses IndexedDB (`lib/browser-db/*`); the five retired server-side AI tables (`conversations`, `chat_messages`, `chat_embeddings`, `round_robin_sessions`, `round_robin_messages`) still exist in Supabase and are flagged in `TABLES_TO_DELETE.md` for an export-then-drop cleanup.
 - **`project_blog_links` is orphaned** (0 rows, no code refs) but intentionally kept as future-facing. Confirm the project↔blog linking feature before dropping.
 - **Phase 2 migrations are uncommitted** — risk of drift between local DB state and the tracked migration history. Commit and verify they are applied remotely.
 - **`orin-nano/` whole-file diffs** — every file shows massive insert/delete churn (likely line-ending/encoding normalization, e.g. CRLF↔LF), not real content change. Worth a `.gitattributes` to normalize line endings.
