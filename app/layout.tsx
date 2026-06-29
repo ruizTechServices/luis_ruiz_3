@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { SiteNavbar } from "@/components/navigation/site-navbar";
+import { SiteFooter } from "@/components/navigation/site-footer";
 import { cn } from "@/lib/utils";
 
 const dmSans = DM_Sans({subsets:['latin'],variable:'--font-sans'});
@@ -55,6 +56,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <SiteNavbar />
         {children}
+        <SiteFooter />
       </body>
     </html>
   );
