@@ -7,181 +7,159 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ---
 
 # AGENTS.md — Project Briefing for AI Assistants
-> Last updated: 2026-06-28 04:07 UTC
+> Last updated: 2026-06-29 10:16 UTC
 > Maintained automatically by the nightly maintenance agent.
 > **Any LLM starting work on this project should read this file first.**
 
 ---
 
 ## 1. Project Overview
+This is **luis-ruiz** (`luis_ruiz_3`) — the personal website, portfolio, and private admin/dashboard application of Luis Giovanni Ruiz ("Gio"). It serves a public-facing side (home page, project portfolio, blog, contact form) and a private authenticated side (a personal admin console for editing content, and a per-user business dashboard tracking projects, clients, leads, money, decisions, and system links).
 
-This is **`luis_ruiz_3`**, the personal portfolio + private operations site for Luis Giovanni Ruiz ("Gio"). It serves two audiences from one Next.js codebase:
-
-1. **Public visitors** — a portfolio homepage, a projects gallery, a blog, and a contact form. Public content is read from Supabase (projects, blog posts, site settings).
-2. **Gio (single admin) and authenticated users** — a private `/dashboard` (solo-founder CRM: projects, clients, leads, money, decisions, links) and an `/admin` area (CRUD over public content + personal journal/todos + AI knowledge tables).
-
-Authority is stateless and email-based: the only admin is the verified Supabase auth email `giosterr44@gmail.com`, checked via the Postgres function `public.is_gio_admin()`. There is also an experimental on-device AI assistant ("Orin") whose current chat persistence lives in browser IndexedDB, not Supabase. The `orin-nano/` folder holds planning docs for an NVIDIA Jetson Orin Nano edge-AI toy app and is largely independent of the web app.
+Admin authority is reserved exclusively for Gio, identified by the verified Supabase auth email `giosterr44@gmail.com` via the `public.is_gio_admin()` SQL function. Admin status is **stateless** — it is derived from the verified auth email, never from `user_profiles.role`.
 
 ## 2. Tech Stack
-
-- **Framework:** Next.js **16.2.9** (App Router, React Server Components). ⚠️ This is a newer Next.js than most training data — read `node_modules/next/dist/docs/` before writing framework code.
-- **Language:** TypeScript 5, React 19.2.4 / React DOM 19.2.4.
-- **UI:** Tailwind CSS v4 (`@tailwindcss/postcss`), shadcn-style components (`components/ui`), Radix UI primitives, `lucide-react` icons, `class-variance-authority` + `clsx` + `tailwind-merge`.
-- **Database / Auth:** Supabase (PostgreSQL 17). SSR auth via `@supabase/ssr` + `@supabase/supabase-js`. Cookie-based sessions; identity resolved server-side from the verified JWT.
-- **Client-side storage:** `idb` (IndexedDB) for Orin chat persistence (`lib/browser-db/*`).
-- **Hosting:** Vercel (structured JSON logs are written to `console.*` to surface in Vercel function logs). A Vercel MCP is connected in tooling.
-- **Notable:** `server-only` package guards server modules; `proxy.ts` (Next.js proxy/middleware equivalent) enforces auth before protected pages render.
+- **Frontend/Framework:** Next.js `16.2.9` (App Router) — **non-standard version; consult `node_modules/next/dist/docs/` before coding.** React `19.2.4`.
+- **Language:** TypeScript `^5` throughout.
+- **Styling:** Tailwind CSS `v4` (`@tailwindcss/postcss`), `tw-animate-css`, `class-variance-authority`, `clsx`, `tailwind-merge`.
+- **UI components:** shadcn (`shadcn ^4.11.0`) + Radix UI (`radix-ui ^1.6.0`), `lucide-react` icons. Component registry config in `components.json`.
+- **Database:** Supabase (PostgreSQL 15) — project ref `huyhgdsjpdjzokjwaspb`, name `luis-ruiz`, region `us-east-1`.
+- **Auth:** Supabase Auth with SSR cookies via `@supabase/ssr`; Google OAuth. Server identity resolved from the verified JWT (`supabase.auth.getClaims()`), never from client/route input.
+- **Client-side storage:** IndexedDB via `idb ^8` (`lib/browser-db/*`) — current Orin AI chat persistence lives here, NOT in Supabase.
+- **Hosting:** Vercel (intended; standard Next.js deploy). Not yet confirmed live.
 
 ## 3. Project Structure
-
 ```
-app/                          → Next.js App Router
-  page.tsx                    → Public homepage (reads Supabase via getHomeContent())
-  projects/, blog/, contact/  → Public pages (contact has a server action)
-  login/, auth/callback/      → Supabase auth entry + OAuth callback
-  account/                    → Public account stub
-  api/ai/{chat,embed,health}/ → Protected AI API routes (requireApiUser, 401 if anon)
-  (authenticated)/            → Protected route group; layout.tsx calls requireUser()
-    account/                  → Authenticated account page
-    admin/<slug>/             → Gio-only CRUD pages (config-driven)
-    dashboard/<slug>/         → Owner-scoped solo-CRM pages (config-driven)
-components/
-  ui/                         → shadcn-style primitives (Button, etc.)
-  data/                       → admin-table-page.tsx, dashboard-table-page.tsx (shared CRUD UI)
-  home/, navigation/, auth/   → Page-specific components
-lib/
-  admin/{config,data,mutations}.ts     → Admin tables registry + server reads/writes
-  dashboard/{data,mutations}.ts        → Dashboard tables registry + owner-scoped reads/writes
-  public-content/data.ts               → Public homepage/blog/projects reads
-  auth/{session,admin,routes}.ts       → Identity (getClaims), is-Gio check, protected prefixes
-  supabase/{server,proxy,dynamic-table}.ts → Supabase clients + table whitelist helper
-  navigation/nav-links.ts              → Nav link registry (filtered by visibility)
-  data/{form,format}.ts                → Form parsing + display formatting
-  logging/server.ts                    → serverLog / serverLogError (JSON lines)
-  browser-db/*                         → IndexedDB (Orin chat persistence)
-scripts/verify-auth-flow.mjs           → `npm run test:auth`
-supabase/migrations/                   → SQL migrations (timestamped)
-docs/auth-routing.md                   → Auth + routing reference (authoritative)
-docs/recent-considerations.md          → DB visibility map (who can see what)
-orin-nano/                             → Jetson Orin Nano edge-AI toy-app planning docs (separate effort)
-AGENTS.md                              → THIS FILE — read first
-CLAUDE.md                              → `@AGENTS.md` include only
-MAINTENANCE_LOG.md                     → Nightly change log
-TABLES_TO_DELETE.md                    → Orphaned-table review queue
+/app
+  /(authenticated)        → Protected route group; layout.tsx calls requireUser()
+    /account              → Current user's account (no [userId] route by design)
+    /admin                → Gio-only admin console (see admin pages below)
+      actions.ts          → Server actions for admin CRUD
+      page.tsx            → Admin overview (counts via getAdminOverview)
+      /blog-posts /projects /site-settings /contactlist /journal /todos
+      /comments /votes /documents /gios-context /legacy-ai
+    /dashboard            → Per-user business dashboard
+      /projects /clients /leads /money /decisions /links
+  /account /login /auth/callback   → Public auth entry points
+  /blog  /blog/[id]                → Public blog (reads comments + votes stats)
+  /projects  /projects/[slug]      → Public portfolio
+  /contact                         → Public contact form (inserts into contactlist)
+  /api/ai/{chat,embed,health}      → AI routes; each calls requireApiUser() → 401 if unauthenticated
+/components
+  /auth /data /home /navigation /ui
+  /data/admin-table-page.tsx       → Generic admin CRUD table UI
+  /data/dashboard-table-page.tsx   → Generic dashboard table UI
+/lib
+  /admin        → config.ts (ADMIN_TABLES registry), data.ts (getAdminOverview), mutations.ts
+  /ai           → contracts.ts, ollama-config.ts
+  /api          → envelope.ts, fetch-with-timeout.ts, safe-json.ts
+  /auth         → session.ts (getClaims/requireUser), routes.ts (protected prefixes), admin.ts
+  /browser-db   → database.ts, repository.ts (IndexedDB Orin chat persistence)
+  /dashboard    → data.ts (owner-scoped reads), mutations.ts
+  /data         → form.ts, format.ts
+  /logging      → client.ts, server.ts, shared.ts (structured logging across auth flow)
+  /navigation   → nav-links.ts (link visibility model)
+  /public-content → data.ts (getHomeContent: site_settings + projects + blog_posts + comment/vote stats)
+  /supabase     → client.ts, server.ts, proxy.ts, env.ts, dynamic-table.ts
+/scripts        → verify-auth-flow.mjs  (npm run test:auth)
+/supabase
+  /migrations       → forward migrations (timestamped .sql)
+  /migrations_down  → matching rollback scripts (.down.sql)
+/docs           → auth-routing.md, recent-considerations.md
+/orin-nano      → Notes/plans for the "Orin" AI assistant work (Jetson Orin Nano context)
+AGENTS.md            → THIS FILE — read first
+CLAUDE.md            → @AGENTS.md include + user/date context
+MAINTENANCE_LOG.md   → Nightly maintenance change log (append-only)
+TABLES_TO_DELETE.md  → Orphaned tables pending cleanup
 ```
 
 ## 4. Database Schema (Supabase)
+Project ref `huyhgdsjpdjzokjwaspb`. **Row counts below are exact `COUNT(*)` values as of 2026-06-29.**
+> ⚠️ Do NOT trust `list_tables` row estimates — they read from stale pg statistics and reported all tables as 0 this run. Always confirm counts with `SELECT count(*)`.
 
-> ✅ **Live DB verified 2026-06-28.** The codebase's active Supabase project is ref `huyhgdsjpdjzokjwaspb` (project name `luis-ruiz`, org `uzesytfzdxtwnskcopuk`, Postgres 15), set in `NEXT_PUBLIC_SUPABASE_URL` (`.env.local`). Row counts below are exact `COUNT(*)` results queried this run.
+| Table | Rows | Purpose | Status |
+|-------|-----:|---------|--------|
+| `blog_posts` | 6 | Public blog/articles | ACTIVE — public read + admin CRUD |
+| `projects` | 3 | Public portfolio records | ACTIVE — public read + admin CRUD |
+| `site_settings` | 1 | Site config (availability, etc.) | ACTIVE — public read + admin CRUD |
+| `contactlist` | 2 | Contact-form submissions (sensitive) | ACTIVE — public insert, Gio-only read |
+| `comments` | 0 | Blog comments | ACTIVE — public blog + admin moderation |
+| `votes` | 0 | Blog votes | ACTIVE — public blog + admin moderation |
+| `journal` | 54 | Gio-only personal journal | ACTIVE — admin CRUD |
+| `todos` | 54 | Gio-only task list | ACTIVE — admin CRUD |
+| `documents` | 1 | Admin vector/doc knowledge base | ACTIVE — admin read-only (match_documents) |
+| `gios_context` | 26 | Gio-specific context vectors | ACTIVE — admin read-only (match_gios_context) |
+| `user_profiles` | 19 | Auth profile rows | ACTIVE — created by handle_new_user() trigger |
+| `conversations` | 32 | Legacy server-side AI conversations | ACTIVE (admin read-only) — legacy-ai inventory |
+| `chat_messages` | 28 | Legacy server-side AI messages | ACTIVE (admin read-only) — legacy-ai inventory |
+| `chat_embeddings` | 18 | Legacy server-side AI embeddings | ACTIVE (admin read-only) — legacy-ai inventory |
+| `round_robin_sessions` | 27 | Legacy multi-model AI sessions | ACTIVE (admin read-only) — legacy-ai inventory |
+| `round_robin_messages` | 154 | Messages for round-robin sessions | ACTIVE (admin read-only) — legacy-ai inventory |
+| `dashboard_projects` | 0 | User-owned dashboard projects | ACTIVE — owner-scoped CRUD |
+| `dashboard_clients` | 0 | User-owned clients | ACTIVE — owner-scoped CRUD |
+| `dashboard_leads` | 0 | User-owned leads | ACTIVE — owner-scoped CRUD |
+| `dashboard_money_entries` | 0 | User-owned financial entries | ACTIVE — owner-scoped CRUD |
+| `dashboard_decisions` | 4 | User-owned decisions | ACTIVE — owner-scoped CRUD |
+| `dashboard_system_links` | 9 | User-owned system links | ACTIVE — owner-scoped CRUD |
+| `project_blog_links` | 0 | Empty project↔blog join table | ORPHANED — see TABLES_TO_DELETE.md |
 
-| Table | Rows* | Purpose | Status |
-|-------|------:|---------|--------|
-| `projects` | 3 | Public portfolio / case-study records | ACTIVE (public-content + admin) |
-| `blog_posts` | 6 | Public blog/article records | ACTIVE (public-content + admin) |
-| `site_settings` | 1 | Public site config (availability text) | ACTIVE (public-content + admin) |
-| `contactlist` | 2 | Contact-form submissions (insert-only public; Gio reads) | ACTIVE (contact action + admin) |
-| `comments` | 0 | Public blog comments (auth insert; Gio moderates) | ACTIVE (admin + public-content types) |
-| `votes` | 0 | Public blog votes (auth insert; Gio moderates) | ACTIVE (admin + public-content types) |
-| `journal` | 54 | Gio-only personal journal | ACTIVE (admin page) |
-| `todos` | 54 | Gio-only personal todos | ACTIVE (admin page) |
-| `documents` | 1 | Admin vector/document knowledge base | ACTIVE (admin read-only; `match_documents()`) |
-| `gios_context` | 26 | Gio-specific context/memory vectors | ACTIVE (admin read-only; `match_gios_context()`) |
-| `dashboard_projects` | 0 | Owner-scoped CRM projects | ACTIVE (dashboard) |
-| `dashboard_clients` | 0 | Owner-scoped clients | ACTIVE (dashboard) |
-| `dashboard_leads` | 0 | Owner-scoped leads | ACTIVE (dashboard) |
-| `dashboard_money_entries` | 0 | Owner-scoped financial entries | ACTIVE (dashboard) |
-| `dashboard_decisions` | 4 | Owner-scoped decisions | ACTIVE (dashboard) |
-| `dashboard_system_links` | 9 | Owner-scoped system links | ACTIVE (dashboard) |
-| `user_profiles` | 19 | Auth profile rows (trigger-created on signup) | ACTIVE (auth backbone) |
-| `project_blog_links` | 0 | Join table projects↔blog | ORPHANED (not referenced in app code; empty) |
-| `conversations` | 32 | Legacy/server-side AI conversations | ORPHANED (app uses IndexedDB instead) |
-| `chat_messages` | 28 | Legacy/server-side AI messages | ORPHANED (app uses IndexedDB instead) |
-| `chat_embeddings` | 18 | Legacy/server-side AI embeddings | ORPHANED (`match_chat_embeddings()` only) |
-| `round_robin_sessions` | 27 | Legacy/future multi-model AI sessions | ORPHANED (not referenced in app code) |
-| `round_robin_messages` | 154 | Messages for round-robin sessions | ORPHANED (not referenced in app code) |
-
-\* Exact `COUNT(*)` verified against the live DB on 2026-06-28.
-
-**Key functions/RPCs:** `is_gio_admin()`, `get_blog_posts_with_stats()`, `match_documents()`, `match_gios_context()`, `match_chat_messages()`, `match_chat_embeddings()`, `handle_new_user()` (signup trigger), `set_updated_at()` / `update_updated_at_column()` (triggers), `get_next_chat_id()` / `next_chat_id()` (no current callers found).
-
-**Storage buckets:** `photos` (public, 9 objects — portfolio media), `user_profile_pictures` (private, owner-scoped, 1 object).
-
-> Orphaned tables that still hold rows are catalogued in `TABLES_TO_DELETE.md`. None were dropped — the maintenance agent cannot reach this DB, and per policy never drops tables that contain rows.
+> The only orphaned table is `project_blog_links` (0 rows, 0 code references). It is preserved as a plausibly future-facing feature; see `TABLES_TO_DELETE.md`.
 
 ## 5. Current State of the Project
-
-Working and live in the codebase:
-
-- **Public homepage** (`app/page.tsx`) now renders **live Supabase data** via `lib/public-content/data.ts` → `getHomeContent()` (availability text from `site_settings`, featured `projects`, recent `blog_posts`). This is new as of the latest commit and supersedes the older "homepage is static" note in `docs/recent-considerations.md`.
-- **Public pages:** `/projects`, `/projects/[slug]`, `/blog`, `/blog/[id]`, `/contact` (with a server action writing to `contactlist`).
-- **Auth:** Supabase SSR auth with cookie sessions; Google OAuth via `/auth/callback`; protected prefixes `/account` and `/dashboard` enforced in `proxy.ts` + the `(authenticated)` layout. Structured auth logging is in place. See `docs/auth-routing.md`.
-- **Admin area** (`/admin/*`): config-driven CRUD (`lib/admin/config.ts` → `ADMIN_TABLES`) over blog posts, projects, site settings, contact list (read/delete), journal, todos, comments, votes; documents and gios_context are read-only.
-- **Dashboard** (`/dashboard/*`): owner-scoped CRUD over `dashboard_*` tables, every read/write filtered by `user_id = auth.uid()` plus RLS.
-- **AI API** (`/api/ai/{chat,embed,health}`): protected by `requireApiUser()`, returns 401 when anonymous.
+Working and live in code:
+- **Auth:** Supabase SSR auth with Google OAuth, structured logging across the flow, server-side route protection via `proxy.ts` → `lib/supabase/proxy.ts`, and the `(authenticated)` route group enforcing `requireUser()`. Protected prefixes: `/account`, `/dashboard`. `/api/ai/*` enforces `requireApiUser()`.
+- **Public site:** Home page (`app/page.tsx`) is **dynamic** as of commit `05c576a` — it reads live Supabase data through `lib/public-content/data.ts` (`getHomeContent()`): availability text from `site_settings`, featured `projects`, recent `blog_posts`, plus comment/vote stats. Public projects, blog, and contact pages are wired to their tables.
+- **Admin console (`/admin`, Gio-only):** Generic config-driven CRUD over `ADMIN_TABLES` (`lib/admin/config.ts`). Editable: blog_posts, projects, site_settings, journal, todos. Insert-disabled (view/moderate): contactlist, comments, votes. Read-only: documents, gios_context. A dedicated read-only **Legacy AI inventory** page (`/admin/legacy-ai`) surfaces counts for the five legacy AI tables.
+- **Dashboard (`/dashboard`, per-user):** Owner-scoped reads through `lib/dashboard/data.ts`, filtered by verified `auth.uid()`.
+- **DB security:** RLS hardened across all tables; Gio-admin access gated by `is_gio_admin()` on verified email. Storage: `photos` bucket public (portfolio media), `user_profile_pictures` private (owner-scoped).
 
 ## 6. Work in Progress
-
-- **Wiring Supabase into public + admin/dashboard surfaces.** The latest commit ("Stage Supabase data into public dashboard and admin pages") touched nearly every page and the `lib/admin`, `lib/dashboard`, and `lib/public-content` modules — the data layer is being connected end-to-end.
-- **Admin CRUD timestamps:** migration `20260628030552_add_admin_page_crud_timestamps.sql` just added `updated_at`/`created_at`/`position` columns and `set_updated_at` triggers to `journal` and `todos`.
-- **Uncommitted working changes:** the `orin-nano/*` planning docs are modified but not staged (see `git status`).
-- **Open AI-persistence decision:** server-side AI tables (`conversations`, `chat_messages`, `chat_embeddings`, `round_robin_*`) exist with data but the app currently persists Orin chats in IndexedDB. Direction not yet decided.
+- **Phase 2 RLS/ownership migrations (uncommitted, untracked):** Seven new migration files dated 2026-06-28 (`phase2_s1`..`phase2_s9`) plus a new `supabase/migrations_down/` rollback set are staged on disk but **not yet committed**. They cover: transitional→final admin function (`is_gio_admin`), profile constraints, an aggregate function, comments/votes ownership, contactlist policies, and a `dashboard` NOT NULL constraint. These should be reviewed and committed (and applied to the remote DB if not already).
+- **AGENTS.md churn:** The committed AGENTS.md (HEAD) had been reverted in the working tree to the Next.js stub before this run; this maintenance run restored the full briefing.
 
 ## 7. Recent Changes (Last 24h)
+One commit in the last 24h:
+- `e3a85e8` (2026-06-28 10:19) — *Chore: docs updated. Updated Layout.tsx*. Touched: `AGENTS.md`, `MAINTENANCE_LOG.md`, `TABLES_TO_DELETE.md`, `app/layout.tsx`, `docs/recent-considerations.md`, and migration `20260628122120_backfill_orphaned_dashboard_ownership.sql`.
 
-From `git log` on `main`:
+Recent prior commits for context: `05c576a` staged Supabase data into public + admin pages; `2fbec50` added the DB visibility map; `168ab45` hardened admin/table permissions; `84972f1` added structured auth logging.
 
-- **`05c576a`** (~38 min ago) — *Stage Supabase data into public dashboard and admin pages.* Broad change across `app/*` (admin, dashboard, blog, projects, contact, homepage), `components/data/*`, `components/navigation/*`, `lib/admin/*`, `lib/auth/*`, `lib/dashboard/*`, `lib/data/*`, `lib/navigation/*`, `lib/public-content/data.ts`, `lib/supabase/dynamic-table.ts`, `scripts/verify-auth-flow.mjs`, and migration `20260628030552_add_admin_page_crud_timestamps.sql`.
-- **`2fbec50`** (~2 h ago) — *docs(supabase): add DB visibility map.* Added `docs/recent-considerations.md`; edited `app/page.tsx`.
-- **`168ab45`** (~3 h ago) — *chore(supabase): harden admin and table permissions.* Added three hardening migrations (`20260627225925`, `20260627230551`, `20260627230809`) and `supabase/config.toml` / `.gitignore`. Tightened RLS, grants, function execution; moved admin authority to verified auth email.
-
-Uncommitted: modifications to seven `orin-nano/*` docs (not staged).
+Uncommitted working-tree changes at run time: modified `AGENTS.md`, `app/layout.tsx`, `docs/recent-considerations.md`, `lib/auth/admin.ts`, `lib/public-content/data.ts`, and the entire `orin-nano/` folder; untracked Phase 2 migrations and `migrations_down/`.
 
 ## 8. Known Issues / Open Questions
-
-- **Stale doc note:** `docs/recent-considerations.md` said `app/page.tsx` is "currently static … not wired into the visible homepage yet." This is now **out of date** — the homepage reads Supabase via `getHomeContent()`. (Corrected note added to that file.)
-- **Dashboard ownership mismatch — RESOLVED 2026-06-28.** Root cause: all 4 `dashboard_decisions` and all 9 `dashboard_system_links` rows were seeded on 2026-05-20 with `user_id = NULL`, before the ownership column (`user_id default auth.uid()`) was added on 2026-06-26. RLS gates on `(select auth.uid()) = user_id`, and `NULL` never matches, so Gio's session saw 0 rows. Fixed by migration `20260628122120_backfill_orphaned_dashboard_ownership.sql`, which set those rows' `user_id` to Gio's verified uid `f6794b1c-0ed7-4f3c-9cad-9c2776de83e4`. All other dashboard tables were empty, so no other backfill was needed. **Prevention:** any future seed/import into `dashboard_*` tables must set `user_id` explicitly (or run as the authenticated owner so `default auth.uid()` fires) — service-role inserts bypass the default and will re-orphan rows. Consider adding a `NOT NULL` constraint on `dashboard_*.user_id` to make this fail loudly instead of silently hiding rows.
-- **Orphaned data tables:** `conversations`, `chat_messages`, `chat_embeddings`, `round_robin_sessions`, `round_robin_messages` hold data but no app code path reads them. Decide migrate / archive / revive. See `TABLES_TO_DELETE.md`.
-- **Logged-in OAuth runtime path** still needs a real-browser verification after Google sign-in (per `docs/auth-routing.md`).
+- **AI persistence direction is undecided.** Current Orin chat uses IndexedDB (`lib/browser-db/*`); the five legacy server-side AI tables (`conversations`, `chat_messages`, `chat_embeddings`, `round_robin_sessions`, `round_robin_messages`) still hold data and are now shown read-only in `/admin/legacy-ai`. Decide whether to migrate, productize, or retire them before any cleanup.
+- **`project_blog_links` is orphaned** (0 rows, no code refs) but intentionally kept as future-facing. Confirm the project↔blog linking feature before dropping.
+- **Phase 2 migrations are uncommitted** — risk of drift between local DB state and the tracked migration history. Commit and verify they are applied remotely.
+- **`orin-nano/` whole-file diffs** — every file shows massive insert/delete churn (likely line-ending/encoding normalization, e.g. CRLF↔LF), not real content change. Worth a `.gitattributes` to normalize line endings.
+- No `TODO`/`FIXME`/`HACK` comments found in `app`, `lib`, or `components`.
 
 ## 9. Next Steps
-
-Inferred from current trajectory:
-
-1. Finish wiring and verifying the staged Supabase reads across admin and dashboard pages (the in-flight commit), then run `npm run test:auth`, `npm run lint`, `npm run build`.
-2. (Optional hardening) Add `NOT NULL` to `dashboard_*.user_id` so ownerless rows can never be inserted again (the ownership bug fixed in `20260628122120` was caused by NULL being allowed).
-3. Decide the AI-persistence direction (IndexedDB vs. the server-side `conversations`/`chat_*`/`round_robin_*` tables) and either wire or retire them.
-4. Commit or discard the modified `orin-nano/*` docs.
+Most likely next actions for Gio:
+1. Review and commit the Phase 2 migrations + `migrations_down/` rollbacks; confirm they are applied to the remote project.
+2. Resolve the AI-persistence decision (IndexedDB vs. revive server-side tables) and either build on or archive the legacy AI tables.
+3. Populate the now-dynamic public pages with real `projects`/`blog_posts` content and verify the contact form write path end-to-end.
+4. Decide the fate of `project_blog_links` (build the linking feature or drop it).
+5. Add `.gitattributes` to stop `orin-nano/` line-ending churn.
 
 ## 10. How to Run Locally
-
 ```bash
 npm install
-npm run dev        # Next.js dev server at http://localhost:3000
-npm run build      # production build
-npm run start      # serve production build
-npm run lint       # eslint
-npm run test:auth  # node scripts/verify-auth-flow.mjs (static auth-flow checks)
+npm run dev         # next dev → http://localhost:3000
+npm run build       # next build
+npm run start       # next start
+npm run lint        # eslint
+npm run test:auth   # node scripts/verify-auth-flow.mjs
 ```
-
-Required env vars (`.env.local`, see `.env.local.example`):
-
-- `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL (currently `https://huyhgdsjpdjzokjwaspb.supabase.co`).
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — Supabase publishable/anon key.
-
-Logged-out runtime smoke checks (dev server running):
-
-```bash
-curl -i http://localhost:3000/account       # → redirect to /login?next=%2Faccount
-curl -i http://localhost:3000/dashboard     # → redirect to /login?next=%2Fdashboard
-curl -i http://localhost:3000/api/ai/health # → 401
+Required env (`.env.local`, see `.env.local.example`):
 ```
+NEXT_PUBLIC_SUPABASE_URL=https://huyhgdsjpdjzokjwaspb.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+```
+(Additional AI/Ollama env may be required for `/api/ai/*` — see `lib/ai/ollama-config.ts`.)
 
 ## 11. Conventions & Preferences
-
-- **Modular, strict separation of concerns** — Gio insists on this. Config registries (`ADMIN_TABLES`, `DASHBOARD_PAGE_TABLES`) drive shared UI components (`components/data/*`); per-table logic stays declarative.
-- **TypeScript everywhere.** Server-only modules import `server-only` to prevent client bundling.
-- **Security is server-side, never trust the client.** Identity comes from `supabase.auth.getClaims()` (`lib/auth/session.ts`), never from route params, query, or form fields. Admin = verified email via `is_gio_admin()`, never `user_profiles.role`. Dashboard reads are double-gated: `.eq("user_id", user.id)` in code **and** RLS in Postgres. There are intentionally no `/account/[userId]` or `/dashboard/[userId]` routes (avoids IDOR).
-- **The navbar is presentation only** — it is not an authorization boundary; the layout + proxy are.
-- **Structured logging** via `lib/logging/server.ts` (`serverLog` / `serverLogError`) as JSON lines to `console.*`; scopes like `auth.actions`, `auth.callback`, `auth.proxy`, `auth.session`. Never log secrets — only verified `sub`/`email` claims.
-- **Supabase changes go through timestamped migrations** in `supabase/migrations/` (format `YYYYMMDDHHMMSS_description.sql`).
-- **Next.js 16 is non-standard** — always consult `node_modules/next/dist/docs/` before writing framework code.
+- Gio prefers **modular code with strict separation of concerns** ("respect separation of concerns to the 'T'").
+- **TypeScript throughout**; data access isolated in `lib/*/data.ts` + `lib/*/mutations.ts` modules.
+- **Security model:** never trust client-supplied identity. Resolve the user from the verified server-side session (`getClaims()`); gate admin on `is_gio_admin()` (verified email), never on `user_profiles.role`. No `/[userId]` routes — avoids IDOR.
+- **Admin surface is config-driven:** add a table to `ADMIN_TABLES` in `lib/admin/config.ts` (with `readOnly`/`deleteOnly`/`createDisabled` flags) rather than hand-coding pages.
+- **Migrations:** every forward migration in `supabase/migrations/` should have a matching rollback in `supabase/migrations_down/`. Service-role inserts into `dashboard_*` tables must set `user_id` explicitly (the `auth.uid()` default is bypassed and would orphan rows).
+- **This is a non-standard Next.js (16.2.9).** Read `node_modules/next/dist/docs/` before writing framework code.

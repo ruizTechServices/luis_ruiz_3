@@ -113,14 +113,14 @@ export async function getBlogPost(id: string): Promise<{
     notFound();
   }
 
-  const [postResult, commentsResult, votesResult] = await Promise.all([
+  const [postResult, commentsResult, statsResult] = await Promise.all([
     supabase.from("blog_posts").select("*").eq("id", postId).maybeSingle(),
     supabase
       .from("comments")
       .select("id, post_id, user_email, content, created_at")
       .eq("post_id", postId)
       .order("created_at", { ascending: false }),
-    supabase.from("votes").select("vote_type").eq("post_id", postId),
+    supabase.rpc("get_blog_posts_with_stats"),
   ]);
 
   if (postResult.error) {
@@ -131,17 +131,17 @@ export async function getBlogPost(id: string): Promise<{
     notFound();
   }
 
-  if (commentsResult.error || votesResult.error) {
+  if (commentsResult.error || statsResult.error) {
     throw new Error("Could not load blog engagement.");
   }
 
-  const votes = (votesResult.data ?? []) as { vote_type: string | null }[];
+  const postStats = ((statsResult.data ?? []) as BlogPostWithStats[]).find((post) => post.id === postId);
 
   return {
     post: postResult.data as BlogPost,
     comments: (commentsResult.data ?? []) as BlogComment[],
-    upVotes: votes.filter((vote) => vote.vote_type === "up").length,
-    downVotes: votes.filter((vote) => vote.vote_type === "down").length,
+    upVotes: postStats?.up_votes ?? 0,
+    downVotes: postStats?.down_votes ?? 0,
   };
 }
 

@@ -3,17 +3,19 @@ import "server-only";
 import { notFound } from "next/navigation";
 
 import { requireUser, type AuthenticatedUser } from "@/lib/auth/session";
+import { createClient } from "@/lib/supabase/server";
 
-export const GIO_ADMIN_EMAIL = "giosterr44@gmail.com";
+export async function isGioAdmin(): Promise<boolean> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("is_gio_admin");
 
-export function isGioAdminEmail(email: string | null | undefined): boolean {
-  return email?.trim().toLowerCase() === GIO_ADMIN_EMAIL;
+  return !error && data === true;
 }
 
 export async function requireGioAdmin(): Promise<AuthenticatedUser> {
   const user = await requireUser();
 
-  if (!isGioAdminEmail(user.email)) {
+  if (!(await isGioAdmin())) {
     notFound();
   }
 

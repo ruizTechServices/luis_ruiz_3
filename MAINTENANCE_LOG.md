@@ -3,6 +3,36 @@
 Nightly maintenance runs, most recent first. Append-only.
 
 ---
+## Run: 2026-06-29 10:16 UTC
+
+### Git Activity (Last 24h)
+1 commit:
+- `e3a85e8` (2026-06-28 10:19) "Chore: docs updated. Updated Layout.tsx" — touched AGENTS.md, MAINTENANCE_LOG.md, TABLES_TO_DELETE.md, app/layout.tsx, docs/recent-considerations.md, supabase/migrations/20260628122120_backfill_orphaned_dashboard_ownership.sql.
+
+Working tree (uncommitted) at run time: modified AGENTS.md, app/layout.tsx, docs/recent-considerations.md, lib/auth/admin.ts, lib/public-content/data.ts, and all of orin-nano/*. Untracked: seven Phase 2 migrations (20260628144339..20260628145033) and a new supabase/migrations_down/ folder. Branch: main (up to date with origin).
+
+### DB Changes
+- Dropped tables: none.
+- Flagged for review: `project_blog_links` (0 rows, no code refs) — kept, not dropped (see note).
+- Total tables: 23. Active/referenced: 22. Orphaned: 1 (`project_blog_links`).
+- Reclassified ACTIVE (were flagged orphaned on 2026-06-28): `conversations`, `chat_messages`, `chat_embeddings`, `round_robin_sessions`, `round_robin_messages` — now surfaced read-only via lib/admin/data.ts `getAdminOverview()` + the new `/admin/legacy-ai` page. Removed from TABLES_TO_DELETE.md.
+- ⚠️ Supabase `list_tables` row ESTIMATES were wrong this run (reported 0 for every table). Real counts obtained via exact `SELECT count(*)` and match prior figures (journal 54, todos 54, gios_context 26, round_robin_messages 154, conversations 32, etc.). Data is fully intact — no loss occurred.
+
+### Docs Updated
+- **AGENTS.md** — full rewrite (restored from the Next.js stub the working tree had reverted to). Now a complete LLM briefing: overview, tech stack (Next 16.2.9 / React 19 / Tailwind v4 / Supabase), structure map, exact schema table, current state, WIP, last-24h changes, known issues, next steps, run instructions, conventions. Preserved the "This is NOT the Next.js you know" warning block.
+- **TABLES_TO_DELETE.md** — rewritten. Removed the five legacy AI tables (now referenced). Only `project_blog_links` remains flagged, with explicit reasoning for not auto-dropping it.
+- **docs/recent-considerations.md** — appended a dated correction block flagging that journal/todos/documents/gios_context and the five legacy AI tables are no longer "unreferenced"; they are now wired into the admin interface.
+- auth-routing.md, README.md, CLAUDE.md, orin-nano/*.md — checked, no stale schema references; left unchanged.
+
+### Notes for Gio
+- **Decision deviation (flagged, not executed):** strict maintenance policy says an orphaned + empty table (`project_blog_links`) should be auto-dropped. I did NOT drop it because docs/recent-considerations.md explicitly preserves it as a future-facing project↔blog linking stub. Dropping is irreversible; deferring to your prior intent. Drop it yourself only if that feature is abandoned: `DROP TABLE public.project_blog_links;`.
+- **Phase 2 migrations are uncommitted/untracked** (7 files + migrations_down/). Review, commit, and confirm they're applied to the remote project to avoid migration-history drift.
+- **AI persistence still undecided** — IndexedDB (lib/browser-db/*) vs. the legacy server-side tables now shown in /admin/legacy-ai. Resolve before any cleanup.
+- **orin-nano/ line-ending churn:** every file shows full insert/delete diffs (~5.7k lines) with no real content change — almost certainly CRLF↔LF normalization. Recommend adding a `.gitattributes` (`* text=auto eol=lf`) to stop the noise.
+- No TODO/FIXME/HACK comments found in app/, lib/, or components/.
+
+
+---
 ## Run: 2026-06-28 (interactive follow-up, DB now reachable)
 
 ### DB Access

@@ -110,23 +110,31 @@ schema cleanup.
   They are empty now, but match plausible blog/portfolio engagement and linking
   features.
 - Storage: keep `photos` public for media URLs and keep
-  `user_profile_pictures` private. Do not add public listing unless a real UI
-  requires it.
+  `user_profile_pictures` private. Do not add public listing unless
+---
 
-## Verification Evidence
+## [2026-06-29 maintenance update] Admin surfacing corrections
 
-Read-only checks performed:
+The visibility/access analysis above still holds at the database (grants + RLS)
+level, but several "not referenced by current app code" notes are now **stale**.
+As of the current codebase these tables ARE referenced by the admin interface:
 
-- Raw row counts for every public app table.
-- Public role `SELECT` counts for public-readable tables.
-- Authenticated non-Gio simulation using an existing non-Gio auth user.
-- Authenticated Gio simulation using `email = 'giosterr44@gmail.com'`.
-- Rollback-only public `contactlist` insert probe.
-- Grant audit from `information_schema.table_privileges`.
-- Policy audit from `pg_policies`.
-- Public RPC/function execute privilege audit.
-- Storage bucket and object count audit.
-- Frontend usage scan across `app/`, `lib/`, `components/`, and `docs/`.
+- `journal` and `todos` — now have admin CRUD pages (`/admin/journal`,
+  `/admin/todos`) and entries in `lib/admin/config.ts` (`ADMIN_TABLES`). No
+  longer "not referenced by current app code."
+- `documents` and `gios_context` — now surfaced read-only in the admin console
+  (`/admin/documents`, `/admin/gios-context`, `readOnly: true`).
+- `conversations`, `chat_messages`, `chat_embeddings`, `round_robin_sessions`,
+  `round_robin_messages` — now counted read-only by `getAdminOverview()` in
+  `lib/admin/data.ts` and displayed on the **Legacy AI inventory** page
+  (`/admin/legacy-ai`). They are therefore no longer orphaned and have been
+  removed from `TABLES_TO_DELETE.md`. The underlying AI-persistence decision
+  (IndexedDB vs. reviving these server-side tables) is still open.
 
-No migrations, RLS changes, table deletes, or frontend behavior changes were
-made by this document.
+Row counts were re-verified live on 2026-06-29 with exact `COUNT(*)` and match
+the figures in the matrix above (e.g. `journal` 54, `todos` 54,
+`gios_context` 26, `round_robin_messages` 154). Note: Supabase `list_tables`
+row ESTIMATES are unreliable here — they reported 0 for every table this run.
+
+The only remaining orphaned table is `project_blog_links` (0 rows, no code
+refs), still kept as future-facing per the deletion notes above.
