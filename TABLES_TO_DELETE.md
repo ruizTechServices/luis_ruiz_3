@@ -1,6 +1,6 @@
 # Tables Flagged for Deletion
 
-> Reviewed on **2026-06-29** for project ref `huyhgdsjpdjzokjwaspb`.
+> Reviewed on **2026-06-30** for project ref `huyhgdsjpdjzokjwaspb`.
 > Exact row counts must be verified with `SELECT count(*)`; Supabase table
 > estimates have been unreliable in this project.
 >
@@ -8,27 +8,31 @@
 
 ## Current Flags
 
-### Retired server-side AI tables
-- **Tables:** `conversations`, `chat_messages`, `chat_embeddings`,
-  `round_robin_sessions`, `round_robin_messages`
-- **Last verified row counts:** 32 / 28 / 18 / 27 / 154
-- **Active app references:** none in `app/`, `lib/admin`, `components/`, or
-  `scripts/`
-- **Why flagged:** the current Orin chat persists in IndexedDB
-  (`lib/browser-db/*`), and the admin count-only viewer was removed.
-- **Safe deletion path:** export data, capture DDL/down migration, drop child
-  tables before parent tables, and remove now-dead helper RPCs.
+**None.** As of 2026-06-30 there are no orphaned tables. All 17 tables in the
+`public` schema are referenced by current app code (see `AGENTS.md` §4).
 
-### `project_blog_links`
-- **Row count:** 0
-- **Active app references:** none in `app/`, `lib/`, `components/`, or `scripts/`
-- **Why flagged:** empty project-to-blog join table for a feature that is not
-  currently built.
-- **Safe deletion path:** confirm the linking feature is abandoned, then drop
-  with a reversible migration.
+## Resolved Since Last Run (dropped from the project)
+
+The following tables were flagged in prior runs and **have now been dropped**
+from the Supabase project. They no longer exist in `public`:
+
+- `conversations` (was 32 rows) — retired server-side AI conversations
+- `chat_messages` (was 28 rows) — retired server-side AI messages
+- `chat_embeddings` (was 18 rows) — retired server-side AI embeddings
+- `round_robin_sessions` (was 27 rows) — retired multi-model AI sessions
+- `round_robin_messages` (was 154 rows) — messages for retired round-robin sessions
+- `project_blog_links` (was 0 rows) — empty project↔blog join stub
+
+### Follow-up (not table deletions, but related cleanup)
+Helper RPCs that referenced the dropped AI tables may now be dead and can be
+removed with a reversible migration after confirming no callers:
+`match_chat_embeddings(...)`, `match_chat_messages(...)`,
+`get_next_chat_id()` / `next_chat_id()`.
 
 ## Notes
 
-- The admin overview no longer counts retired server-side AI tables.
-- The retired-AI admin route has been removed.
-- IndexedDB store names in `lib/browser-db/*` are not Supabase table references.
+- The IndexedDB object stores named `conversations`/`messages`/`memories` in
+  `lib/browser-db/*` are the active Orin chat persistence layer — they are NOT
+  Supabase table references and must not be confused with the dropped tables.
+- If any future table loses all code references, add it here with its exact row
+  count and a reversible `DROP` path. Drop automatically only if it is empty.

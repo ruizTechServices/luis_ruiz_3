@@ -3,6 +3,36 @@
 Nightly maintenance runs, most recent first. Append-only.
 
 ---
+## Run: 2026-06-30 16:04 UTC
+
+### Git Activity (Last 24h)
+1 commit:
+- `75892c1` (2026-06-29 13:05) "feat(seo): add public sitemap page and footer link" — touched app/layout.tsx, app/sitemap.ts, app/sitemap/page.tsx, components/navigation/site-footer.tsx, docs/sitemap-maintenance.md, lib/seo/site-url.ts, lib/seo/sitemap.ts, package.json (added `test:sitemap`), scripts/verify-sitemap.mjs.
+
+For context (just outside the 24h window, 2026-06-29 morning): `7b33e4c` "chore(admin): remove legacy AI inventory surface" and `4c2d3c4` "feat(admin): add CRUD pages for admin knowledge tables".
+
+Working tree (uncommitted) at run time: modified MAINTENANCE_LOG.md and all of orin-nano/* (line-ending churn only — equal 5748/5748 insert/delete). The Phase 2 migrations + migrations_down/ that were untracked last run are now COMMITTED. Branch: main (up to date with origin).
+
+### DB Changes
+- Dropped tables: none dropped by this run. **However, six tables flagged in prior runs were dropped from the project since the last run** and are now gone: `conversations`, `chat_messages`, `chat_embeddings`, `round_robin_sessions`, `round_robin_messages`, `project_blog_links`.
+- Flagged for review: none. TABLES_TO_DELETE.md is now empty — no orphaned tables remain.
+- Total active tables: 17 (all referenced in code; exact COUNT(*) verified live).
+- Row counts (exact): blog_posts 6, projects 3, site_settings 1, contactlist 2, comments 0, votes 0, journal 54, todos 54, documents 1, gios_context 26, user_profiles 19, dashboard_projects 0, dashboard_clients 0, dashboard_leads 0, dashboard_money_entries 0, dashboard_decisions 4, dashboard_system_links 9.
+
+### Docs Updated
+- `AGENTS.md` — full rewrite: schema table down to 17 ACTIVE tables (removed the 6 dropped tables), Phase 2 migrations marked committed, added the SEO/sitemap feature throughout (§3/§5/§11), refreshed Recent Changes / Known Issues / Next Steps.
+- `TABLES_TO_DELETE.md` — cleared all flags; documented the six tables as dropped/resolved; noted dead-RPC follow-up.
+- `docs/recent-considerations.md` — appended a 2026-06-30 note marking the six matrix rows (and their RPCs) as stale/dropped; pointed to AGENTS.md §4 as authoritative.
+- `MAINTENANCE_LOG.md` — this entry.
+
+### Notes for Gio
+- `orin-nano/*` still shows whole-file diffs that are pure CRLF↔LF line-ending churn (5748 insertions / 5748 deletions, no content change). Add `.gitattributes` (`* text=auto eol=lf`) and commit the one-time normalization to stop this recurring every run.
+- Dead-RPC cleanup: `match_chat_embeddings(...)`, `match_chat_messages(...)`, and `get_next_chat_id()`/`next_chat_id()` reference now-dropped tables. Remove with a reversible migration after confirming no callers.
+- The IndexedDB object stores `conversations`/`messages`/`memories` in `lib/browser-db/*` are the active Orin chat layer — NOT Supabase tables; don't confuse with the dropped tables.
+- No TODO/FIXME/HACK comments found in app/, lib/, or components/.
+- For production SEO, set `NEXT_PUBLIC_SITE_URL=https://luis-ruiz.com` so `/sitemap.xml` emits absolute production URLs.
+
+---
 ## Run: 2026-06-29 10:16 UTC
 
 ### Git Activity (Last 24h)

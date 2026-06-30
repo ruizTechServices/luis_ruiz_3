@@ -137,3 +137,26 @@ row ESTIMATES are unreliable here — they reported 0 for every table this run.
 
 The only remaining orphaned table is `project_blog_links` (0 rows, no code
 refs), still kept as future-facing per the deletion notes above.
+
+---
+
+## [2026-06-30 maintenance update] Dropped tables — matrix rows now stale
+
+**Six tables in the matrix above no longer exist.** They were dropped from the
+Supabase project (`huyhgdsjpdjzokjwaspb`) since the 2026-06-29 update. The
+`public` schema now contains exactly **17 tables, all ACTIVE** (re-verified live
+with exact `COUNT(*)` on 2026-06-30). The following matrix/RPC rows are
+**historical only** and should be ignored as current state:
+
+- `conversations`, `chat_messages`, `chat_embeddings`,
+  `round_robin_sessions`, `round_robin_messages` — retired server-side AI
+  tables, now **DROPPED**.
+- `project_blog_links` — empty join stub, now **DROPPED**.
+
+Consequently the RPC visibility rows for `match_chat_embeddings(...)` and
+`match_chat_messages(...)` (and any `get_next_chat_id()`/`next_chat_id()`)
+reference tables that no longer exist; treat these functions as dead and remove
+them with a reversible migration after confirming no callers.
+
+All other rows in the matrix above still hold. Authoritative current schema is in
+`AGENTS.md` §4. `TABLES_TO_DELETE.md` is now empty (no orphaned tables remain).
