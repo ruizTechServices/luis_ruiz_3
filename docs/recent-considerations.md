@@ -2,6 +2,21 @@
 
 Last verified: 2026-06-28
 
+> ⚠️ **PARTIALLY STALE (flagged 2026-07-01 by nightly maintenance).** The tables
+> in the "Current Frontend Usage" / access-model tables below that list
+> `conversations`, `chat_messages`, `chat_embeddings`, `round_robin_sessions`,
+> `round_robin_messages`, and `project_blog_links` (with row counts and "keep
+> for future" guidance) are **OUT OF DATE** — all six of those tables have since
+> been **DROPPED** from the project (see the "DROPPED" note lower in this file
+> and `AGENTS.md` §4). The RPC rows for `match_chat_embeddings(...)` and
+> `match_chat_messages(...)` are also OUT OF DATE — as of 2026-07-02 those
+> functions (plus `get_next_chat_id()`/`next_chat_id()`) have themselves been
+> DROPPED from the DB and no longer exist; only `match_documents(...)` and
+> `match_gios_context(...)` remain.
+> **For the authoritative current schema (17 active tables, exact row counts),
+> read `AGENTS.md` §4 — it is regenerated nightly. Treat this file as historical
+> analysis, not current truth.**
+
 This is a visibility map for the `luis-ruiz` Supabase project. It answers who
 can view what today and what future frontend work should assume.
 

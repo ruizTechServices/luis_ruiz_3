@@ -3,6 +3,98 @@
 Nightly maintenance runs, most recent first. Append-only.
 
 ---
+## Run: 2026-07-02 04:05 UTC
+
+### Git Activity (Last 24h)
+**No commits in the strict last-24h window.** `HEAD` remains `1e73737` (2026-06-30 15:05, ~37h before this run). Branch `main`, up to date with `origin/main`.
+
+Working tree (uncommitted) at run time — same character as prior runs:
+- Documentation edits from prior maintenance runs still uncommitted: `AGENTS.md`, `MAINTENANCE_LOG.md`, `TABLES_TO_DELETE.md`, `docs/recent-considerations.md`. These have now accrued across several runs without a commit — flagged in AGENTS.md §9 as a recommended `chore(docs)` commit.
+- Untracked asset `public/videos/hero-bg-lighting-1.mp4` (~2.7 MB) — still present, still not referenced by any page.
+- `orin-nano/*` still showing whole-file line-ending churn only (~5748/5748 equal insert/delete, CRLF↔LF). No `.gitattributes` exists yet.
+- No application-code changes.
+
+### DB Changes
+- Dropped tables: none.
+- Flagged for review: none.
+- Total active tables: **17** (all referenced in code).
+- Exact `COUNT(*)` re-verified — **identical to last run**: blog_posts 6, projects 3, site_settings 1, contactlist 2, comments 0, votes 0, journal 54, todos 54, documents 1, gios_context 26, user_profiles 19, dashboard_projects 0, dashboard_clients 0, dashboard_leads 0, dashboard_money_entries 0, dashboard_decisions 4, dashboard_system_links 9.
+- **RPC cleanup RESOLVED:** the dead helper functions flagged in prior runs (`match_chat_embeddings`, `match_chat_messages`, `get_next_chat_id`, `next_chat_id`) **no longer exist** in `public` (verified via `pg_proc`). Only `match_documents` and `match_gios_context` remain — both valid/active. The dropped functions are named only in the historical migration `20260627225925_...sql` (immutable) and by no live app code.
+- ⚠️ `list_tables` estimates still unreliable in this project — always confirm with `SELECT count(*)`.
+
+### Docs Updated
+- `AGENTS.md` — bumped "Last updated" + §4 verification date to 2026-07-02; updated §7 (HEAD aged to ~37h; added the resolved-RPC note); §8 Known Issues (dead-RPC follow-up marked RESOLVED); §9 Next Steps (replaced the RPC-removal item with a recommendation to commit the accumulated doc changes).
+- `TABLES_TO_DELETE.md` — bumped review timestamp; converted the RPC "Follow-up" section to RESOLVED. Still **no tables flagged**.
+- `docs/recent-considerations.md` — extended the stale banner to note the `match_chat_*`/`*_chat_id` RPCs are now themselves dropped.
+- `MAINTENANCE_LOG.md` — this entry.
+
+### Notes for Gio
+- Quietest run yet: zero code changes, zero schema changes. The only real state change since the last run is that the dead AI RPCs are gone — that cleanup is now fully closed.
+- The uncommitted doc edits have piled up across multiple maintenance runs. Consider a single `chore(docs)` commit so future 24h git diffs actually reflect your work, not maintenance churn.
+- Still open (unchanged): untracked hero video not wired in, no `.gitattributes` for the `orin-nano/` CRLF churn.
+
+---
+## Run: 2026-07-01 22:56 UTC
+
+### Git Activity (Last 24h)
+**No commits in the strict last-24h window.** `HEAD` remains `1e73737` (2026-06-30 15:05, ~32h before this run). Branch `main`, up to date with `origin/main`.
+
+Working tree (uncommitted) at run time — unchanged in character from the previous run:
+- Documentation edits from the prior maintenance run still uncommitted: `AGENTS.md`, `MAINTENANCE_LOG.md`, `TABLES_TO_DELETE.md`, `docs/recent-considerations.md`.
+- Untracked asset `public/videos/hero-bg-lighting-1.mp4` (~2.7 MB) — still present, still not referenced by any page (grep for `hero-bg-lighting` → 0 code hits).
+- `orin-nano/*` still showing whole-file line-ending churn only (~5748/5748 equal insert/delete, CRLF↔LF). No `.gitattributes` exists yet.
+- No application-code changes.
+
+### DB Changes
+- Dropped tables: none.
+- Flagged for review: none.
+- Total active tables: **17** (all referenced in code; verified by grep this run).
+- Exact `COUNT(*)` re-verified — **identical to last run**: blog_posts 6, projects 3, site_settings 1, contactlist 2, comments 0, votes 0, journal 54, todos 54, documents 1, gios_context 26, user_profiles 19, dashboard_projects 0, dashboard_clients 0, dashboard_leads 0, dashboard_money_entries 0, dashboard_decisions 4, dashboard_system_links 9.
+- ⚠️ `list_tables` estimates again stale/wrong (reported all 0 except user_profiles=1) — real counts came from `SELECT count(*)`.
+
+### Docs Updated
+- `AGENTS.md` — refreshed "Last updated" timestamp; rewrote §7 (Recent Changes) to reflect zero commits in the 24h window (`1e73737` has aged out).
+- `TABLES_TO_DELETE.md` — refreshed review timestamp; still **none flagged**.
+- `MAINTENANCE_LOG.md` — this entry.
+- `docs/recent-considerations.md` — no change needed; already carries an accurate "PARTIALLY STALE" banner redirecting to AGENTS.md §4. Left as historical analysis.
+
+### Notes for Gio
+- **Nothing has changed since the last run** — no commits, no schema drift, no new/removed code. This was a verification-only pass.
+- Three carry-over items still open (all previously noted): (1) wire in or discard the untracked hero video `public/videos/hero-bg-lighting-1.mp4`; (2) add a `.gitattributes` (`* text=auto eol=lf`) to kill the `orin-nano/` line-ending churn and commit the one-time normalization; (3) drop the now-dead RPCs left over from the retired AI tables (`match_chat_embeddings`, `match_chat_messages`, `get_next_chat_id`/`next_chat_id`) via a reversible migration.
+- The prior run's doc edits are still sitting uncommitted in the working tree — consider committing them so the nightly briefing is versioned.
+- No `TODO`/`FIXME`/`HACK` comments in `app`, `lib`, or `components`.
+
+---
+## Run: 2026-07-01 04:07 UTC
+
+### Git Activity (Last 24h)
+1 commit:
+- `1e73737` (2026-06-30 15:05) "chore: updated md file and docs" — the **previous nightly maintenance run's commit**. Touched AGENTS.md, MAINTENANCE_LOG.md, TABLES_TO_DELETE.md, docs/recent-considerations.md. No application-code change.
+
+For context (just outside the 24h window): `75892c1` "feat(seo): add public sitemap page and footer link" (2026-06-29 13:05), `7b33e4c` "chore(admin): remove legacy AI inventory surface", `4c2d3c4` "feat(admin): add CRUD pages for admin knowledge tables".
+
+Working tree (uncommitted) at run time: all of `orin-nano/*` still showing line-ending churn only (equal 5748/5748 insert/delete), plus a **NEW untracked asset `public/videos/hero-bg-lighting-1.mp4`** (~2.7 MB, added ~01:03 UTC). No app-code changes staged. Branch: main (up to date with origin). Note: `.git/index.lock` could not be removed by the agent (permission), but no git writes were needed.
+
+### DB Changes
+- Dropped tables: none.
+- Flagged for review: none. TABLES_TO_DELETE.md remains empty — no orphaned tables.
+- Total active tables: 17 (all referenced in code; exact COUNT(*) verified live + grep cross-ref).
+- Row counts (exact, UNCHANGED since last run): blog_posts 6, projects 3, site_settings 1, contactlist 2, comments 0, votes 0, journal 54, todos 54, documents 1, gios_context 26, user_profiles 19, dashboard_projects 0, dashboard_clients 0, dashboard_leads 0, dashboard_money_entries 0, dashboard_decisions 4, dashboard_system_links 9.
+- Reminder: `list_tables` estimates were again wrong (reported all-zero except user_profiles=1); real counts came from `SELECT count(*)`.
+
+### Docs Updated
+- `AGENTS.md` — refreshed timestamp; added new `public/videos/hero-bg-lighting-1.mp4` hero asset to structure (§3), WIP (§6), Known Issues (§8), and Next Steps (§9, now the #1 next action); rewrote Recent Changes (§7) to the current 24h window (only `1e73737`); marked schema re-verified/unchanged (§4).
+- `TABLES_TO_DELETE.md` — review date → 2026-07-01; still zero flags; noted grep cross-ref.
+- `docs/recent-considerations.md` — added a prominent top-of-file STALE banner: the matrix rows for the six dropped AI/join tables and their RPCs are historical, not current; pointed to AGENTS.md §4 as authoritative. (Previous run had only a bottom note; the top tables still read as live.)
+- `MAINTENANCE_LOG.md` — this entry.
+
+### Notes for Gio
+- **New hero video** `public/videos/hero-bg-lighting-1.mp4` is untracked and unused. Wire it into `app/page.tsx` as a background video and commit it — or move to CDN/Supabase Storage + Git LFS if you don't want a 2.7 MB binary in git. Right now it's neither in the repo nor rendered anywhere.
+- **`orin-nano/*` CRLF↔LF churn is STILL unresolved** (multiple runs now). Add `.gitattributes` (`* text=auto eol=lf`) and commit the one-time normalization to stop this recurring every single run. This is low-effort and overdue.
+- Dead-RPC cleanup still pending: `match_chat_embeddings(...)`, `match_chat_messages(...)`, `get_next_chat_id()`/`next_chat_id()` reference dropped tables. Remove via a reversible migration after confirming no callers.
+- No `TODO`/`FIXME`/`HACK` comments in app/lib/components. No new migrations this run.
+
+---
 ## Run: 2026-06-30 16:04 UTC
 
 ### Git Activity (Last 24h)

@@ -7,7 +7,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ---
 
 # AGENTS.md — Project Briefing for AI Assistants
-> Last updated: 2026-06-30 16:04 UTC
+> Last updated: 2026-07-02 04:05 UTC
 > Maintained automatically by the nightly maintenance agent.
 > **Any LLM starting work on this project should read this file first.**
 
@@ -45,6 +45,8 @@ Admin authority is reserved exclusively for Gio, identified by the verified Supa
   /account /login /auth/callback   → Public auth entry points
   /blog  /blog/[id]                → Public blog (reads comments + votes stats)
   /projects  /projects/[slug]      → Public portfolio
+/public
+  /videos/hero-bg-lighting-1.mp4   → NEW hero background video asset (untracked; not yet wired into a page)
   /contact                         → Public contact form (inserts into contactlist)
   /sitemap                         → Human-readable public sitemap page
   sitemap.ts                       → Next.js metadata route → /sitemap.xml (hourly revalidate)
@@ -81,7 +83,7 @@ TABLES_TO_DELETE.md  → Orphaned tables pending cleanup (currently empty)
 ```
 
 ## 4. Database Schema (Supabase)
-Project ref `huyhgdsjpdjzokjwaspb`. **Row counts below are exact `COUNT(*)` values as of 2026-06-30.**
+Project ref `huyhgdsjpdjzokjwaspb`. **Row counts below are exact `COUNT(*)` values, re-verified 2026-07-02 — unchanged since 2026-06-30.**
 > ⚠️ Do NOT trust `list_tables` row estimates — they read from stale pg statistics and reported all tables as 0 (except `user_profiles`) this run. Always confirm counts with `SELECT count(*)`.
 >
 > **There are currently 17 tables in `public`, and ALL are ACTIVE.** The five retired server-side AI tables (`conversations`, `chat_messages`, `chat_embeddings`, `round_robin_sessions`, `round_robin_messages`) and the empty `project_blog_links` join table — previously flagged as orphaned — **have been dropped since the last run.** `TABLES_TO_DELETE.md` is now empty.
@@ -119,33 +121,39 @@ Working and live in code:
 - **DB security:** RLS hardened across all tables; Gio-admin access gated by `is_gio_admin()` on verified email. Storage: `photos` bucket public (portfolio media), `user_profile_pictures` private (owner-scoped). 13 forward migrations with matching `migrations_down/` rollbacks; the Phase 2 RLS/ownership migration set is now **committed**.
 
 ## 6. Work in Progress
-- No major uncommitted feature work at run time. The Phase 2 RLS/ownership migrations and `migrations_down/` rollbacks (flagged as uncommitted in the prior run) are now **committed** to `main`.
-- Only working-tree changes at run time: `MAINTENANCE_LOG.md` (this agent) and the entire `orin-nano/` folder showing whole-file diffs (line-ending churn — equal insertions/deletions, not real content change).
+- **New hero video asset (untracked):** `public/videos/hero-bg-lighting-1.mp4` (~2.7 MB, added 2026-07-01 ~01:03) appeared in the working tree but is not yet referenced by any page or committed. Strong signal Gio is about to build a video-background hero on the home page (`app/page.tsx`). Not yet wired in.
+- No uncommitted application-code feature work at run time. The Phase 2 RLS/ownership migrations and `migrations_down/` rollbacks are committed to `main`.
+- Persistent working-tree noise: the entire `orin-nano/` folder shows whole-file diffs (line-ending churn — 5748 insertions / 5748 deletions, i.e. CRLF↔LF normalization, not real content change). Still unresolved — no `.gitattributes` exists yet.
 
 ## 7. Recent Changes (Last 24h)
-One commit in the strict last-24h window:
-- `75892c1` (2026-06-29 13:05) — *feat(seo): add public sitemap page and footer link*. Touched: `app/layout.tsx`, `app/sitemap.ts`, `app/sitemap/page.tsx`, `components/navigation/site-footer.tsx`, `docs/sitemap-maintenance.md`, `lib/seo/site-url.ts`, `lib/seo/sitemap.ts`, `package.json` (added `test:sitemap`), `scripts/verify-sitemap.mjs`.
+**No commits in the strict last-24h window.** `HEAD` is still `1e73737` (2026-06-30 15:05, ~37h before this run). The working tree carries only uncommitted documentation edits from the prior maintenance runs (`AGENTS.md`, `MAINTENANCE_LOG.md`, `TABLES_TO_DELETE.md`, `docs/recent-considerations.md`) plus the untracked hero video and the persistent `orin-nano/` line-ending churn. **No new application-code work since the last run.**
 
-Recent prior commits for context (just outside 24h, 2026-06-29 morning):
-- `7b33e4c` — *chore(admin): remove legacy AI inventory surface* (removed the count-only viewer for the retired AI tables).
-- `4c2d3c4` — *feat(admin): add CRUD pages for admin knowledge tables* (journal, todos, documents, gios_context surfaced in admin).
+**Resolved this run — dead AI RPCs are gone:** the helper functions previously flagged for removal (`match_chat_embeddings`, `match_chat_messages`, `get_next_chat_id`, `next_chat_id`) no longer exist in the `public` schema (verified via `pg_proc`). Only `match_documents` and `match_gios_context` remain, and both are valid/active. The dropped RPCs are now referenced only inside the historical migration `20260627225925_...sql` (correct — migrations are immutable records) and by no live app code. This cleanup follow-up is closed.
 
-Schema change since last run: the six previously-orphaned tables (`conversations`, `chat_messages`, `chat_embeddings`, `round_robin_sessions`, `round_robin_messages`, `project_blog_links`) were dropped from the Supabase project.
+Recent commits for context (all outside the 24h window):
+- `1e73737` (2026-06-30 15:05) — *chore: updated md file and docs* (a prior maintenance commit). Current `HEAD`.
+- `75892c1` (2026-06-29 13:05) — *feat(seo): add public sitemap page and footer link*.
+- `7b33e4c` (2026-06-29 07:26) — *chore(admin): remove legacy AI inventory surface* (removed the count-only viewer for the retired AI tables).
+- `4c2d3c4` (2026-06-29 07:12) — *feat(admin): add CRUD pages for admin knowledge tables* (journal, todos, documents, gios_context surfaced in admin).
+
+No schema changes this run — the 17 `public` tables and their exact `COUNT(*)` row counts are identical to the last run. (The six previously-orphaned AI/join tables were dropped in an earlier run and remain gone.)
 
 ## 8. Known Issues / Open Questions
-- **`orin-nano/` whole-file diffs** — every file shows massive equal insert/delete churn (5748/5748 lines), which is line-ending/encoding normalization (CRLF↔LF), not real content change. Add a `.gitattributes` (e.g. `* text=auto eol=lf`) to stop the noise, then commit the normalization once.
-- **Public content is thin** — `projects` (3) and `blog_posts` (6) have content, but `dashboard_*` working tables and `comments`/`votes` are mostly empty. Verify the contact-form write path (`contactlist`) end-to-end.
+- **Untracked hero video** — `public/videos/hero-bg-lighting-1.mp4` (~2.7 MB) is in the working tree but untracked and unused. Decide whether to commit it to the repo (2.7 MB in git is acceptable but not ideal — consider Git LFS or serving from Supabase Storage/CDN) and wire it into the home hero, or discard it.
+- **`orin-nano/` whole-file diffs** — every file shows massive equal insert/delete churn (5748/5748 lines), which is line-ending/encoding normalization (CRLF↔LF), not real content change. Add a `.gitattributes` (e.g. `* text=auto eol=lf`) to stop the noise, then commit the normalization once. STILL UNRESOLVED across multiple runs.
+- **Public content is thin** — `projects` (3) and `blog_posts` (6) have content, but `dashboard_*` working tables and `comments`/`votes` are mostly empty. Verify the contact-form write path (`contactlist`, 2 rows) end-to-end.
 - **Hosting not confirmed live** — Vercel deploy intended; set `NEXT_PUBLIC_SITE_URL=https://luis-ruiz.com` in production so the sitemap emits absolute production URLs (not localhost/fallback).
 - No `TODO`/`FIXME`/`HACK` comments found in `app`, `lib`, or `components`.
-- **Dropped-table cleanup follow-up:** confirm no orphaned helper RPCs remain for the dropped AI tables (e.g. `match_chat_embeddings`, `match_chat_messages`, `get_next_chat_id`/`next_chat_id`) — they reference tables that no longer exist and can be removed with a reversible migration.
+- **Dropped-table cleanup follow-up — RESOLVED (2026-07-02):** the orphaned helper RPCs for the dropped AI tables (`match_chat_embeddings`, `match_chat_messages`, `get_next_chat_id`/`next_chat_id`) no longer exist in the DB. Nothing further to do; only the historical migration still names them.
 
 ## 9. Next Steps
 Most likely next actions for Gio:
-1. Add `.gitattributes` to normalize line endings and stop the `orin-nano/` churn; commit the one-time normalization.
-2. Remove now-dead RPCs that referenced the dropped AI tables (`match_chat_embeddings`, `match_chat_messages`, `get_next_chat_id`/`next_chat_id`) via a reversible migration.
-3. Populate public pages with real `projects`/`blog_posts` content and verify the contact form write path end-to-end.
-4. Configure production hosting (Vercel) and `NEXT_PUBLIC_SITE_URL`; verify `/sitemap.xml` serves absolute production URLs and submit to Google Search Console.
-5. Decide the AI-persistence direction (IndexedDB-only vs. rebuild server-side) now that the legacy server-side AI tables are gone.
+1. Wire `public/videos/hero-bg-lighting-1.mp4` into the home hero (`app/page.tsx`) as a background video, then commit it (or move it to CDN/Storage + Git LFS if repo weight is a concern).
+2. Add `.gitattributes` to normalize line endings and stop the `orin-nano/` churn; commit the one-time normalization.
+3. Commit the outstanding working-tree changes — the uncommitted doc edits have now accumulated across several maintenance runs without a commit; a `chore(docs)` commit would clear the noise and make future 24h git diffs meaningful.
+4. Populate public pages with real `projects`/`blog_posts` content and verify the contact form write path end-to-end.
+5. Configure production hosting (Vercel) and `NEXT_PUBLIC_SITE_URL`; verify `/sitemap.xml` serves absolute production URLs and submit to Google Search Console.
+6. Decide the AI-persistence direction (IndexedDB-only vs. rebuild server-side) now that the legacy server-side AI tables are gone.
 
 ## 10. How to Run Locally
 ```bash

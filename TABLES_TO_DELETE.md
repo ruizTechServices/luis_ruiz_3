@@ -1,15 +1,17 @@
 # Tables Flagged for Deletion
 
-> Reviewed on **2026-06-30** for project ref `huyhgdsjpdjzokjwaspb`.
+> Reviewed on **2026-07-02 04:05 UTC** for project ref `huyhgdsjpdjzokjwaspb`.
 > Exact row counts must be verified with `SELECT count(*)`; Supabase table
-> estimates have been unreliable in this project.
+> estimates have been unreliable in this project (this run they again reported
+> all-zero except `user_profiles`, contradicted by real `COUNT(*)`).
 >
 > **Do not drop data-bearing tables without export artifacts and captured DDL.**
 
 ## Current Flags
 
-**None.** As of 2026-06-30 there are no orphaned tables. All 17 tables in the
-`public` schema are referenced by current app code (see `AGENTS.md` §4).
+**None.** As of 2026-07-01 there are no orphaned tables. All 17 tables in the
+`public` schema are referenced by current app code (verified by grep this run;
+see `AGENTS.md` §4).
 
 ## Resolved Since Last Run (dropped from the project)
 
@@ -23,11 +25,14 @@ from the Supabase project. They no longer exist in `public`:
 - `round_robin_messages` (was 154 rows) — messages for retired round-robin sessions
 - `project_blog_links` (was 0 rows) — empty project↔blog join stub
 
-### Follow-up (not table deletions, but related cleanup)
-Helper RPCs that referenced the dropped AI tables may now be dead and can be
-removed with a reversible migration after confirming no callers:
+### Follow-up (RESOLVED 2026-07-02)
+The helper RPCs that referenced the dropped AI tables —
 `match_chat_embeddings(...)`, `match_chat_messages(...)`,
-`get_next_chat_id()` / `next_chat_id()`.
+`get_next_chat_id()` / `next_chat_id()` — **no longer exist** in the `public`
+schema (verified this run via `pg_proc`). They are now referenced only inside the
+historical migration `20260627225925_...sql` and by no live app code. No further
+action needed. The only remaining `match_*` RPCs are `match_documents(...)` and
+`match_gios_context(...)`, both valid and active.
 
 ## Notes
 
