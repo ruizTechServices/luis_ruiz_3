@@ -18,8 +18,11 @@ function UtilityRail() {
 }
 
 export function Hero({ settings }: { settings: SiteSettings | null }) {
-  const isAvailable = settings?.availability !== false;
   const configuredText = settings?.availability_text?.trim();
+  const declaresAvailability = configuredText
+    ? /\b(ready|available|open)\b/i.test(configuredText)
+    : true;
+  const isAvailable = settings?.availability !== false || declaresAvailability;
   const availabilityText = isAvailable
     ? configuredText && !/baby/i.test(configuredText)
       ? configuredText
