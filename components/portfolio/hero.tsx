@@ -18,8 +18,16 @@ function UtilityRail() {
 }
 
 export function Hero({ settings }: { settings: SiteSettings | null }) {
-  const availabilityText = settings?.availability_text?.trim() || "Available for selected work";
-  const availabilityClass = settings?.availability === false ? "lrp-availability--closed" : "lrp-availability--open";
+  const isAvailable = settings?.availability !== false;
+  const configuredText = settings?.availability_text?.trim();
+  const availabilityText = isAvailable
+    ? configuredText && !/baby/i.test(configuredText)
+      ? configuredText
+      : "Available for selected work"
+    : "Currently booked";
+  const availabilityClass = isAvailable
+    ? "lrp-availability--open"
+    : "lrp-availability--closed";
 
   return (
     <section id="top" className="lrp-hero-shell">
