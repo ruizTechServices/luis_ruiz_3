@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# luis-ruiz
 
-## Getting Started
+Luis Giovanni Ruiz's ("Gio") personal website: a public portfolio, blog, and
+contact form, plus a private authenticated admin console and per-user
+business dashboard. Built with Next.js (App Router) and Supabase.
 
-First, run the development server:
+## Prerequisites
+
+- Node.js `>=20.9.0`
+- npm
+- A Supabase project (URL + publishable API key)
+
+## Install
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Create `.env.local` in the project root with the following variables
+(see `.devin`/project docs for where to obtain values — never commit actual
+values):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Required**
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Optional**
+- `NEXT_PUBLIC_SITE_URL` — production origin used by the sitemap (falls back
+  to `SITE_URL`, then Vercel env vars, then a hardcoded default)
+- `SITE_URL`
+- `OLLAMA_BASE_URL`, `OLLAMA_CHAT_MODEL`, `OLLAMA_EMBED_MODEL`,
+  `EMBEDDING_PROFILE_ID` — used by the `/api/ai/*` routes
 
-## Learn More
+## Scripts
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run dev          # start the dev server at http://localhost:3000
+npm run build        # production build
+npm run start         # run the production build
+npm run lint          # eslint
+npm run test:auth     # verify the auth/routing wiring (scripts/verify-auth-flow.mjs)
+npm run test:sitemap  # verify the sitemap (scripts/verify-sitemap.mjs) — run AFTER npm run build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Learn more
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `AGENTS.md` is the source of truth for project architecture, conventions,
+  and current state — read it before making changes.
+- `docs/` has deeper-dive notes (auth routing, sitemap maintenance, recent
+  considerations).
+- `CLAUDE.md` is a thin pointer to `AGENTS.md`.
