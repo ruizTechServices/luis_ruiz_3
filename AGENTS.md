@@ -46,12 +46,9 @@ Admin authority is reserved exclusively for Gio, identified by the verified Supa
       page.tsx            → Admin overview (counts via getAdminOverview)
       /blog-posts /projects /site-settings /contactlist /comments /votes
       /journal /todos /documents /gios-context   → per-table CRUD pages
-      /legacy-ai          → ⚠️ EMPTY LEFTOVER DIR (surface removed in 7b33e4c) — safe to delete
     /dashboard            → Per-user business dashboard
       /projects /clients /leads /money /decisions /links
   /login  /auth/callback           → Public auth entry points
-  /account                         → ⚠️ EMPTY LEFTOVER DIR — the real account page lives at
-                                      app/(authenticated)/account/. Not a route. Safe to delete.
   /blog  /blog/[id]                → Public blog (reads comments + votes stats)
   /projects  /projects/[slug]      → Public portfolio
   /contact                         → Public contact form (inserts into contactlist)
@@ -91,7 +88,6 @@ Admin authority is reserved exclusively for Gio, identified by the verified Supa
                       remote ref; the remote ref lives in .env.local). Its auth rate-limit
                       settings are Supabase built-ins, unrelated to the public.rate_limits table.
 /docs           → auth-routing.md, recent-considerations.md, sitemap-maintenance.md
-                  seo/  → ⚠️ EMPTY DIR (no files) — either populate or delete
                   luis-ruiz-obsidian/ → Obsidian notes vault (STILL UNTRACKED in git as of
                                         2026-08-20; luis-ruiz/Welcome.md + 5 .obsidian/ state files)
 /orin-nano      → Notes/plans for the "Orin" AI assistant work (Jetson Orin Nano context):
@@ -142,7 +138,7 @@ Working and live in code:
 - **Auth:** Supabase SSR auth with Google OAuth, structured logging across the flow, server-side route protection via `proxy.ts` → `lib/supabase/proxy.ts`, and the `(authenticated)` route group enforcing `requireUser()`. Protected prefixes: `/account`, `/dashboard`. `/api/ai/*` enforces `requireApiUser()`.
 - **Public site:** Home page (`app/page.tsx`) is **dynamic** — it reads live Supabase data through `lib/public-content/data.ts` (`getHomeContent()`): availability text from `site_settings`, featured `projects`, recent `blog_posts`, plus comment/vote stats. Public projects, blog, and contact pages are wired to their tables.
 - **SEO / sitemap:** `app/sitemap.ts` (Next.js metadata route) serves `/sitemap.xml`, revalidated hourly, built by `lib/seo/sitemap.ts`. It emits static public routes plus dynamic `projects` (filtered `visibility='public'`, non-null `slug`) and `blog_posts` rows; private/admin/api routes are excluded by design. A human-readable `/sitemap` page (`app/sitemap/page.tsx`) consumes the same builder. Origin resolution is centralized in `lib/seo/site-url.ts` (env order: `NEXT_PUBLIC_SITE_URL` → `SITE_URL` → `VERCEL_PROJECT_PRODUCTION_URL` → `VERCEL_URL` → `https://luis-ruiz.com`). The `/sitemap` link lives in the global footer (`components/navigation/site-footer.tsx`). Guardrail: `scripts/verify-sitemap.mjs` (`npm run test:sitemap`). Full playbook in `docs/sitemap-maintenance.md`.
-- **Admin console (`/admin`, Gio-only):** Generic config-driven CRUD over `ADMIN_TABLES` (`lib/admin/config.ts`). Editable: blog_posts, projects, site_settings, journal, todos. Insert-disabled (view/moderate): contactlist, comments, votes. Read-only: documents, gios_context. (The legacy AI inventory/count surface was removed in commit `7b33e4c`; its now-empty directory still sits at `app/(authenticated)/admin/legacy-ai/`.)
+- **Admin console (`/admin`, Gio-only):** Generic config-driven CRUD over `ADMIN_TABLES` (`lib/admin/config.ts`). Editable: blog_posts, projects, site_settings, journal, todos. Insert-disabled (view/moderate): contactlist, comments, votes. Read-only: documents, gios_context. (The legacy AI inventory/count surface was removed in commit `7b33e4c`.)
 - **Dashboard (`/dashboard`, per-user):** Owner-scoped reads through `lib/dashboard/data.ts`, filtered by verified `auth.uid()`.
 - **DB security:** RLS hardened across all tables; Gio-admin access gated by `is_gio_admin()` on verified email. Storage: `photos` bucket public (portfolio media), `user_profile_pictures` private (owner-scoped). 13 forward migrations with 8 matching `migrations_down/` rollbacks; the Phase 2 RLS/ownership migration set is committed. NOTE: the `rate_limits` table has NO migration file — it is DB-side drift (see §6/§8).
 
@@ -158,11 +154,7 @@ Working and live in code:
 
 **Nothing changed in application code this run** — no commits, no new/removed tracked files, no working-tree changes beyond the maintenance docs this run itself edits. The project is idle, not broken. This run (2026-08-21 04:05 UTC) followed the previous logged run (2026-08-20 16:05 UTC) after **~12 hours** — back to roughly-nightly spacing, though the run before that sat ~3.5 days out, so cadence remains erratic overall (see the schedule note in the banner). One historical schedule gap also remains (no 2026-07-31 entry).
 
-**Three empty leftover directories still on disk** (first found 2026-07-22; git does not track empty directories, so these stay invisible in `git status` — re-confirmed present this run):
-- `app/(authenticated)/admin/legacy-ai/` — residue of commit `7b33e4c`, which removed the legacy AI inventory surface but left the folder.
-- `app/account/` — residue of the account page's move into the `(authenticated)` route group. It is not a route at all — the real account page lives at `app/(authenticated)/account/`.
-- `docs/seo/` — listed in §3 as a docs subfolder since early revisions, but it contains zero files.
-None of these affect the build (Next.js ignores directories with no route files), but all three are safe to delete and their presence has been quietly making the structure map wrong.
+**Three empty leftover directories deleted 2026-08-21** (first found 2026-07-22; git does not track empty directories, so they stayed invisible in `git status` until removed directly): `app/(authenticated)/admin/legacy-ai/` (residue of commit `7b33e4c`), `app/account/` (residue of the account page's move into the `(authenticated)` route group), and `docs/seo/` (listed in §3 as a docs subfolder since early revisions but always empty). None affected the build; all three are now gone from disk.
 
 **Supabase access still lost (TWENTY-SEVENTH consecutive run) — same hard error, diagnosis settled:**
 - The luis-ruiz Supabase project (ref `huyhgdsjpdjzokjwaspb`) remains unreachable. `list_projects` returns only org `chuzvccapvwvbdhmycyr` — three projects: `ghost-ai-ruiztech` (INACTIVE), `razzy-db` (`hswylmfyovrboeorfoqc`), and `sota-board-lake` (`hnaqragfzyvdfwwadghj`). A direct `list_tables` call against `huyhgdsjpdjzokjwaspb` again returned **`MCP error -32600: You do not have permission to perform this action`** — byte-identical for twenty-seven runs running.
@@ -189,7 +181,7 @@ The six previously-orphaned AI/join tables (`conversations`, `chat_messages`, `c
 ## 8. Known Issues / Open Questions
 - **⚠️ Supabase MCP is scoped to the WRONG ORG (27th run in a row; first seen 2026-07-11).** The MCP token in use only sees org `chuzvccapvwvbdhmycyr` (`ghost-ai-ruiztech`, `razzy-db`, `sota-board-lake`). This project's DB `huyhgdsjpdjzokjwaspb` (`luis-ruiz`) is under a **different account/org**: a direct `list_tables` call against it returns **`permission denied`** (MCP error -32600), identically on twenty-seven consecutive runs. **The token itself is provably fine** — prior runs (2026-07-14 through 2026-07-17) read `sota-board-lake` without error; that control test is retired as settled. So this is purely an org-scoping problem; it is not an expired credential, not an outage, and it will not self-heal. Nightly DB audits cannot run and §4 counts are going stale (42 days and counting). **This is the single highest-value thing for Gio to fix** — everything else in the DB audit (spam rows, `rate_limits`, orphan detection) is blocked behind it. ACTION FOR GIO: authorize the Supabase account/org that owns `huyhgdsjpdjzokjwaspb` for the maintenance agent's Supabase MCP (or move/invite the project into `chuzvccapvwvbdhmycyr`). Until then, treat all §4 numbers as last-known floors (2026-07-10).
 - **⚠️ `MAINTENANCE_LOG.md` is now ~151 KB of near-duplicate entries.** Thirty-plus consecutive runs have appended an entry saying substantially the same thing ("no commits, DB unreachable, docs dirty"). The signal-to-noise ratio is poor and the file grows ~1–2 KB/run for as long as the project stays idle. The last several runs deliberately wrote **short** entries. ACTION FOR GIO: consider archiving entries older than ~14 days into `docs/maintenance-archive/` and/or dropping the agent to weekly while the repo is idle.
-- **Three empty leftover directories (found 2026-07-22):** `app/(authenticated)/admin/legacy-ai/`, `app/account/`, and `docs/seo/` all contain zero files. Harmless to the build, invisible to git, but they made §3's structure map inaccurate for weeks (notably: `/account` was described as a public route when it is an empty folder). ACTION FOR GIO: `rmdir` all three, or put the intended content in `docs/seo/`.
+- **Three empty leftover directories (found 2026-07-22) — RESOLVED 2026-08-21:** `app/(authenticated)/admin/legacy-ai/`, `app/account/`, and `docs/seo/` were deleted. They had been harmless to the build and invisible to git, but had made §3's structure map inaccurate for weeks (notably: `/account` was described as a public route when it was an empty folder).
 - **Obsidian vault untracked (unchanged)** — `docs/luis-ruiz-obsidian/` is untracked and contains volatile `.obsidian/` state files (`workspace.json` rewrites on every Obsidian close). Decide: `.gitignore` the `.obsidian/` subdirectory and commit the notes, or ignore the whole vault path. Leaving it untracked means every nightly run reports it as drift.
 - **`README.md` is still stock `create-next-app` boilerplate** (1,450 bytes, untouched since 2026-06-17) — it says nothing about luis-ruiz, Supabase, the env vars, or the admin/dashboard split. It is the first file any human or LLM lands on, and it teaches them nothing. `AGENTS.md` §10 already holds the real run instructions; a 20-line real README would fix this.
 - **`rate_limits` = untracked DB drift** — a table exists in the database with no corresponding migration file and no code references. Two risks: (1) it is not reproducible from `supabase/migrations/` (a fresh environment won't have it), and (2) if it turns out to be an accidental leftover it should be dropped. Because it is empty AND its schema looks deliberate (fixed-window limiter), the maintenance agent **flagged rather than dropped** it. ACTION FOR GIO: confirm it's intentional, then either capture a migration (+ down-migration) or `DROP TABLE public.rate_limits;`.
@@ -206,15 +198,7 @@ Most likely next actions for Gio:
 0. **Fix the Supabase org scope for the maintenance agent — 27 runs blind, and it will not self-heal.** The nightly DB audit cannot run until the account/org owning `huyhgdsjpdjzokjwaspb` is authorized to the Supabase MCP. The agent can currently see only org `chuzvccapvwvbdhmycyr` and reads those projects fine — so the connection works; it is pointed at the wrong org. Do this first — steps 1 and 4 below both depend on DB visibility.
 1. **Finish the `rate_limits` feature:** wire the table into a rate-limiting check (contact form and/or `/api/ai/*`), and capture a forward migration + `migrations_down/` rollback so the DB stays reproducible. Right now it's an orphaned, untracked table.
 2. **Wire `public/videos/hero-bg-lighting-1.mp4` into the home hero (`app/page.tsx`)** as a background video — the asset is committed and waiting.
-3. **Housekeeping pass (cheap, ~10 min, clears five recurring items at once):**
-   ```bash
-   printf '* text=auto eol=lf\n' > .gitattributes
-   rmdir "app/(authenticated)/admin/legacy-ai" app/account docs/seo
-   git add --renormalize .
-   git add -A AGENTS.md MAINTENANCE_LOG.md TABLES_TO_DELETE.md docs/recent-considerations.md .gitattributes
-   git commit -m "chore(docs): commit maintenance backlog, normalize line endings, drop empty dirs"
-   ```
-   Then decide the fate of the untracked `docs/luis-ruiz-obsidian/` vault (ignore `.obsidian/` state and commit the notes, or ignore the whole path), and replace the stock `create-next-app` `README.md` with a real one.
+3. **Housekeeping pass — DONE 2026-08-21:** `.gitattributes` added, the seven-week maintenance backlog committed, the three empty leftover directories deleted, the Obsidian vault notes committed (with `.obsidian/` state ignored), and `README.md` replaced with a real install guide. See the commit history for details.
 4. **Anti-spam on the contact form (higher priority — spam is escalating and now unobserved).** Three bot-like submissions in five days (ids 15, 17, 18) before the DB went dark. Wire the `rate_limits` table (and/or a honeypot/captcha) into `app/contact/actions.ts`, and delete/moderate the spam rows once DB access returns.
 5. Populate public pages with real `projects`/`blog_posts` content.
 6. Configure production hosting (Vercel) and `NEXT_PUBLIC_SITE_URL`; verify `/sitemap.xml` serves absolute production URLs and submit to Google Search Console.
