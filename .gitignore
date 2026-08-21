@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# FUSE artifacts (nightly agent runs on a FUSE mount)
+.fuse_hidden*
+
+# Obsidian volatile state (workspace.json rewrites on every close)
+docs/luis-ruiz-obsidian/**/.obsidian/
