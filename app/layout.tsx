@@ -4,6 +4,7 @@ import "./globals.css";
 import { SiteNavbar } from "@/components/navigation/site-navbar";
 import { SiteFooter } from "@/components/navigation/site-footer";
 import { cn } from "@/lib/utils";
+import { Analytics } from "@vercel/analytics/next"
 
 const dmSans = DM_Sans({subsets:['latin'],variable:'--font-sans'});
 
@@ -57,6 +58,7 @@ export default function RootLayout({
         <SiteNavbar />
         {children}
         <SiteFooter />
+        <Analytics />
       </body>
     </html>
   );
