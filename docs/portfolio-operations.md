@@ -112,12 +112,16 @@ Prefer a forward repair for database problems. Vercel rollback changes applicati
 
 The story-publication rollback refuses to run while private drafts exist. Preserve drafts before planning any schema rollback, and do not publish private writing just to get past that guard. The identity/privacy rollback can restore broader access and refuses known exposure cases. Read those files before any rollback; do not remove their guards to force one through.
 
-## Verification still requiring the owner
+## Owner verification and release evidence
 
 The initial redesign shipped through [PR #2](https://github.com/ruizTechServices/luis_ruiz_3/pull/2), production commit `599066118f6f554665302e5f4631e50e22938cdb`, on September 7, 2026. Vercel reported the production deployment ready and assigned both domain aliases. Live article rendering, the contact submission and cleanup, robots, sitemap, and RSS were verified. Lint, TypeScript, auth source checks, production build, and sitemap checks passed.
 
 The existing database records the publishing migration as `20260907151735`, the identity/privacy migration as `20260907165454`, and the owner media-listing policy as `20260907171244`. Transactional database tests verified draft isolation, publishing/unpublishing, stale-edit rejection, owner identity, private project visibility, and comment email protection. Media role checks verified owner-only photo metadata listing without changing files. Their synthetic rows were rolled back; the synthetic contact inquiry was separately removed.
 
-At this handoff, verification of the complete flow in Gio’s own signed-in browser remains pending. After signing in, verify dashboard access, saved links, a private draft save/reopen, preview, a deliberate publication/update, and unpublishing. Confirm a separate signed-out browser cannot see the draft. Source checks and database checks alone do not prove the owner’s OAuth browser flow.
+On September 7, 2026, Gio completed Google authentication in the shared test browser. An earlier attempt expired during verification; a fresh OAuth request completed and production showed owner dashboard and Admin access. Expired or failed OAuth returns now lead to a fixed sign-in message with a safe retry destination instead of silently rendering the homepage. Provider error descriptions are not displayed, and authentication expiry/security settings are unchanged.
+
+The authenticated browser verified Dashboard → Links → Write a story, private draft creation, Markdown preview, saving, reloading, and saving an uploaded image inside the draft. An anonymous database-role query returned zero rows for that draft. The separate public-page fetch could not complete, so this is database evidence of draft isolation, not a signed-out browser check. The temporary verification draft was removed after testing; Gio’s own writing was preserved. Publication and unpublishing remain covered by the transactional database tests above, rather than a temporary public test article.
+
+The existing LR logo was uploaded through the production media form, converted to WebP, and successfully rendered at 500 × 500 in the editor preview. Both Copy URL and Copy story image were verified. The reusable public logo remains in Your images at `portfolio/52ac64d2-bd5a-4e97-9465-b697290cf32a.webp`.
 
 The contact honeypot and server validation reduce basic form spam. They are **not** an API rate limiter, and direct database API requests can bypass the form’s honeypot. There is no automatic email sender, newsletter service, or guarantee of traffic growth in this release.
