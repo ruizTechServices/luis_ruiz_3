@@ -9,6 +9,7 @@ import { type AdminField, type AdminTableConfig } from "@/lib/admin/config";
 import { getAdminRows, type AdminRow } from "@/lib/admin/data";
 import { formatDate } from "@/lib/data/format";
 import { Button } from "@/components/ui/button";
+import { LocalDateTimeField } from "@/components/data/local-date-time-field";
 
 export async function AdminTablePage({ slug }: { slug: string }) {
   const { config, rows } = await getAdminRows(slug);
@@ -121,12 +122,31 @@ function AdminFieldControl({
   value: AdminRow[string] | undefined;
 }) {
   const sharedClassName = "rounded-md border border-input bg-background px-3 py-2";
+  const textValue = Array.isArray(value)
+    ? value.join(", ")
+    : typeof value === "string" || typeof value === "number" ? String(value) : field.defaultValue ?? "";
+
+  if (field.type === "timestamp") {
+    return <LocalDateTimeField name={field.name} label={field.label} value={textValue} required={field.required} hint={field.hint} />;
+  }
 
   if (field.type === "checkbox") {
     return (
       <label className="flex items-center gap-2 text-sm">
         <input defaultChecked={value === true} name={field.name} type="checkbox" />
         {field.label}
+      </label>
+    );
+  }
+
+  if (field.type === "select") {
+    return (
+      <label className="grid gap-1 text-sm">
+        <span className="font-medium">{field.label}</span>
+        <select className={sharedClassName} defaultValue={textValue} name={field.name} required={field.required}>
+          {field.options?.map((option) => <option key={option} value={option}>{option.charAt(0).toUpperCase() + option.slice(1)}</option>)}
+        </select>
+        {field.hint ? <span className="text-xs leading-5 text-muted-foreground">{field.hint}</span> : null}
       </label>
     );
   }
@@ -141,6 +161,7 @@ function AdminFieldControl({
           name={field.name}
           required={field.required}
         />
+        {field.hint ? <span className="text-xs leading-5 text-muted-foreground">{field.hint}</span> : null}
       </label>
     );
   }
@@ -150,10 +171,12 @@ function AdminFieldControl({
       <span className="font-medium">{field.label}</span>
       <input
         className={sharedClassName}
-        defaultValue={typeof value === "string" || typeof value === "number" ? String(value) : ""}
+        defaultValue={textValue}
         name={field.name}
         required={field.required}
+        type={field.type === "url" ? "url" : "text"}
       />
+      {field.hint ? <span className="text-xs leading-5 text-muted-foreground">{field.hint}</span> : null}
     </label>
   );
 }

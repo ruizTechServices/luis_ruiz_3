@@ -7,11 +7,12 @@ import {
   type AdminTableConfig,
 } from "@/lib/admin/config";
 import { requireGioAdmin } from "@/lib/auth/admin";
+import { projectInputSchema } from "@/lib/admin/projects/validation";
 import { readBoolean, readOptionalString, readString } from "@/lib/data/form";
 import { dynamicTable } from "@/lib/supabase/dynamic-table";
 import { createClient } from "@/lib/supabase/server";
 
-type AdminPayload = Record<string, string | boolean | null>;
+type AdminPayload = Record<string, string | string[] | boolean | null>;
 
 export async function createAdminRecord(slug: string, formData: FormData): Promise<void> {
   await requireGioAdmin();
@@ -52,9 +53,18 @@ export async function deleteAdminRecord(slug: string, id: string): Promise<void>
 }
 
 function buildPayload(config: AdminTableConfig, formData: FormData): AdminPayload {
-  return Object.fromEntries(
+  const payload = Object.fromEntries(
     config.fields.map((field) => [field.name, readFieldValue(field, formData)]),
   ) as AdminPayload;
+
+  if (config.table !== "projects") return payload;
+
+  const parsed = projectInputSchema.safeParse(payload);
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues.map((issue) => issue.message).join(" "));
+  }
+
+  return parsed.data;
 }
 
 function readFieldValue(field: AdminField, formData: FormData): string | boolean | null {

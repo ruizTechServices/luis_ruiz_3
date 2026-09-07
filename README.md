@@ -1,51 +1,65 @@
-# luis-ruiz
+# luis-ruiz.com
 
-Luis Giovanni Ruiz's ("Gio") personal website: a public portfolio, blog, and
-contact form, plus a private authenticated admin console and per-user
-business dashboard. Built with Next.js (App Router) and Supabase.
+Luis Giovanni Ruiz’s public portfolio, project case studies, blog, and contact page, with a private daily dashboard and story editor. Built with Next.js App Router, React, TypeScript, and the existing Supabase database and authentication.
 
-## Prerequisites
+**Start with the [daily operations guide](docs/portfolio-operations.md)** for writing, publishing, managing inquiries, maintaining projects, deployment, and recovery.
 
-- Node.js `>=20.9.0`
-- npm
-- A Supabase project (URL + publishable API key)
+## Project identity
 
-## Install
+- Site: [luis-ruiz.com](https://luis-ruiz.com)
+- Source: [ruizTechServices/luis_ruiz_3](https://github.com/ruizTechServices/luis_ruiz_3)
+- Supabase project: `huyhgdsjpdjzokjwaspb` (`luis-ruiz`)
+- Deployment: connected GitHub repository → Vercel
 
-```bash
-npm install
-```
+The public site shows published stories and public projects. Gio’s verified owner account controls publishing and administration. Other signed-in accounts retain their own private dashboard records.
 
-Create `.env.local` in the project root with the following variables
-(see `.devin`/project docs for where to obtain values — never commit actual
-values):
+## Run locally
 
-**Required**
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-
-**Optional**
-- `NEXT_PUBLIC_SITE_URL` — production origin used by the sitemap (falls back
-  to `SITE_URL`, then Vercel env vars, then a hardcoded default)
-- `SITE_URL`
-- `OLLAMA_BASE_URL`, `OLLAMA_CHAT_MODEL`, `OLLAMA_EMBED_MODEL`,
-  `EMBEDDING_PROFILE_ID` — used by the `/api/ai/*` routes
-
-## Scripts
+Use a supported Node.js release compatible with Next.js 16 and npm.
 
 ```bash
-npm run dev          # start the dev server at http://localhost:3000
-npm run build        # production build
-npm run start         # run the production build
-npm run lint          # eslint
-npm run test:auth     # verify the auth/routing wiring (scripts/verify-auth-flow.mjs)
-npm run test:sitemap  # verify the sitemap (scripts/verify-sitemap.mjs) — run AFTER npm run build
+git clone https://github.com/ruizTechServices/luis_ruiz_3.git
+cd luis_ruiz_3
+npm ci
 ```
 
-## Learn more
+Create an uncommitted `.env.local` with values from the existing project:
 
-- `AGENTS.md` is the source of truth for project architecture, conventions,
-  and current state — read it before making changes.
-- `docs/` has deeper-dive notes (auth routing, sitemap maintenance, recent
-  considerations).
-- `CLAUDE.md` is a thin pointer to `AGENTS.md`.
+```dotenv
+NEXT_PUBLIC_SUPABASE_URL=https://huyhgdsjpdjzokjwaspb.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_existing_publishable_key
+NEXT_PUBLIC_SITE_URL=https://www.luis-ruiz.com
+```
+
+Never put a secret or service-role key in a `NEXT_PUBLIC_` variable.
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000`. `/dashboard` is the daily workspace; `/dashboard/write` is the owner’s story library and editor entry point. Save drafts explicitly before leaving the editor.
+
+## Check a release
+
+```bash
+npm run lint
+npx tsc --noEmit
+npm run test:auth
+npm run build
+npm run test:sitemap
+npm run start
+```
+
+Auth checks inspect source wiring; they do not replace a real signed-in browser test. Read the [operations guide](docs/portfolio-operations.md#verification-still-requiring-the-owner) for remaining owner checks and release limitations.
+
+Contact requests are stored in the private inbox at `/admin/contactlist`. The site does not send email notifications or replies. Optional `OLLAMA_BASE_URL`, `OLLAMA_CHAT_MODEL`, `OLLAMA_EMBED_MODEL`, and `EMBEDDING_PROFILE_ID` configure the existing authenticated AI routes; they are separate from the core publishing and inquiry flows.
+
+## Maintainer references
+
+Read `AGENTS.md` before code changes for repository rules. Its historical maintenance notes may be stale; verify live state against source, migrations, and deployment evidence.
+
+- [Daily operations and deployment](docs/portfolio-operations.md)
+- [Auth routing](docs/auth-routing.md)
+- [Sitemap maintenance](docs/sitemap-maintenance.md)
+
+Database migrations and their rollback files live in `supabase/migrations/` and `supabase/migrations_down/`. A Vercel code rollback does not roll back Supabase. Preserve private drafts and access controls when planning recovery.

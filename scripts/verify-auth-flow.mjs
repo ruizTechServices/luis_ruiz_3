@@ -1,5 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
+import assert from "node:assert/strict";
+import ts from "typescript";
 
 const root = process.cwd();
 
@@ -163,6 +165,31 @@ const checks = [
 ];
 
 const failures = [];
+
+// Execute the same credential reader used by both auth actions, without making
+// auth requests or needing Next's server runtime. Transpilation keeps this script
+// compatible with Node versions that do not natively load TypeScript files.
+try {
+  const credentialSource = readFileSync(path.join(root, "lib/auth/credentials.ts"), "utf8");
+  const { outputText } = ts.transpileModule(credentialSource, {
+    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 },
+  });
+  const { readAuthCredentials } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`);
+  for (const password of ["  pass word  ", "\tline\nbreak\r\n", "e\u0301-🔐-ñ ", "   ", ""]) {
+    const form = new FormData();
+    form.set("email", "  gio@example.com  ");
+    form.set("password", password);
+    assert.deepEqual(readAuthCredentials(form), { email: "gio@example.com", password });
+  }
+  assert.deepEqual(readAuthCredentials(new FormData()), { email: "", password: "" });
+  const invalidForm = new FormData();
+  invalidForm.set("password", new Blob(["file is not a password"]), "invalid.txt");
+  assert.equal(readAuthCredentials(invalidForm).password, "");
+  const actions = readFileSync(path.join(root, "app/auth/actions.ts"), "utf8");
+  assert.equal((actions.match(/const \{ email, password \} = readAuthCredentials\(formData\);/g) ?? []).length, 2);
+} catch (error) {
+  failures.push(`password preservation regression: ${error instanceof Error ? error.message : String(error)}`);
+}
 
 for (const [label, relativePath, verify] of checks) {
   const filePath = path.join(root, relativePath);

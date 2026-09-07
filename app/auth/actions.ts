@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { getSafeRedirectPath, LOGIN_PATH } from "@/lib/auth/routes";
+import { readAuthCredentials } from "@/lib/auth/credentials";
 import { createClient } from "@/lib/supabase/server";
 import { createOperationId } from "@/lib/logging/shared";
 import { serverLog, serverLogError } from "@/lib/logging/server";
@@ -20,8 +21,7 @@ export async function signInWithPassword(
   formData: FormData,
 ): Promise<AuthFormState> {
   const requestId = createOperationId("signin-password");
-  const email = getRequiredString(formData, "email");
-  const password = getRequiredString(formData, "password");
+  const { email, password } = readAuthCredentials(formData);
   const next = getSafeRedirectPath(formData.get("next"));
 
   serverLog({
@@ -72,8 +72,7 @@ export async function signUpWithPassword(
   formData: FormData,
 ): Promise<AuthFormState> {
   const requestId = createOperationId("signup-password");
-  const email = getRequiredString(formData, "email");
-  const password = getRequiredString(formData, "password");
+  const { email, password } = readAuthCredentials(formData);
   const next = getSafeRedirectPath(formData.get("next"));
 
   serverLog({
@@ -178,10 +177,4 @@ export async function signOut(): Promise<void> {
   serverLog({ scope: ACTION_SCOPE, event: "signout_succeeded", requestId });
 
   redirect(LOGIN_PATH);
-}
-
-function getRequiredString(formData: FormData, name: string): string {
-  const value = formData.get(name);
-
-  return typeof value === "string" ? value.trim() : "";
 }

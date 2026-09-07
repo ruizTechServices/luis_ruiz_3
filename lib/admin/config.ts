@@ -1,10 +1,13 @@
-export type AdminFieldType = "text" | "textarea" | "checkbox";
+export type AdminFieldType = "text" | "textarea" | "checkbox" | "select" | "list" | "url" | "timestamp";
 
 export interface AdminField {
   name: string;
   label: string;
   type?: AdminFieldType;
   required?: boolean;
+  options?: readonly string[];
+  defaultValue?: string;
+  hint?: string;
 }
 
 export interface AdminTableConfig {
@@ -43,21 +46,32 @@ export const ADMIN_TABLES = [
     title: "Projects",
     description: "Public portfolio records. Keep private work marked non-public.",
     select:
-      "id, created_at, updated_at, title, slug, url, description, summary, status, category, featured, visibility, role, repo_url, live_url, cover_image_url",
+      "id, created_at, updated_at, title, slug, url, description, summary, status, category, featured, visibility, stack, role, context, problem, constraints, approach, architecture, decisions, outcomes, current_status, repo_url, live_url, cover_image_url, started_at, completed_at",
     orderBy: "updated_at",
     fields: [
       { name: "title", label: "Title", required: true },
-      { name: "slug", label: "Slug", required: true },
-      { name: "url", label: "URL", required: true },
+      { name: "slug", label: "Page URL slug", required: true, hint: "Keep an existing slug unchanged to preserve shared links." },
+      { name: "url", label: "Project URL", type: "url", required: true },
       { name: "summary", label: "Summary", type: "textarea" },
       { name: "description", label: "Description", type: "textarea" },
-      { name: "status", label: "Status", required: true },
-      { name: "category", label: "Category", required: true },
-      { name: "visibility", label: "Visibility", required: true },
+      { name: "status", label: "Status", type: "select", required: true, options: ["draft", "active", "complete", "archived"], defaultValue: "draft" },
+      { name: "category", label: "Category", type: "select", required: true, options: ["project", "product", "client", "experiment"], defaultValue: "project" },
+      { name: "visibility", label: "Visibility", type: "select", required: true, options: ["private", "public", "unlisted"], defaultValue: "private", hint: "Only public projects appear on the website. Private and unlisted projects remain visible to you." },
+      { name: "stack", label: "Built with", type: "list", hint: "Separate technologies with commas, for example: Next.js, TypeScript, Supabase." },
       { name: "role", label: "Role" },
-      { name: "repo_url", label: "Repo URL" },
-      { name: "live_url", label: "Live URL" },
-      { name: "cover_image_url", label: "Cover image URL" },
+      { name: "context", label: "The context", type: "textarea" },
+      { name: "problem", label: "The problem", type: "textarea" },
+      { name: "constraints", label: "Constraints", type: "textarea" },
+      { name: "approach", label: "The approach", type: "textarea" },
+      { name: "architecture", label: "Architecture", type: "textarea" },
+      { name: "decisions", label: "Key decisions", type: "textarea" },
+      { name: "outcomes", label: "What it delivers", type: "textarea", hint: "Describe observable results. Include numbers only when you can support them." },
+      { name: "current_status", label: "Where it stands", type: "textarea" },
+      { name: "repo_url", label: "Source repository URL", type: "url" },
+      { name: "live_url", label: "Live website URL", type: "url" },
+      { name: "cover_image_url", label: "Cover image URL", type: "url" },
+      { name: "started_at", label: "Started at", type: "timestamp" },
+      { name: "completed_at", label: "Completed at", type: "timestamp", hint: "Leave empty for ongoing work." },
       { name: "featured", label: "Featured", type: "checkbox" },
     ],
   },

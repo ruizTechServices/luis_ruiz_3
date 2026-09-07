@@ -22,6 +22,7 @@ export default async function Home() {
         <p className="mt-7 max-w-xl text-base leading-8 text-muted-foreground sm:text-lg">I’m Luis Ruiz, a New York web developer and founder of <a href="https://www.ruiztechservices.com" className="text-foreground underline decoration-border underline-offset-4">ruizTechServices</a>. I build websites, explore AI, and turn everyday problems into working software.</p>
         <div className="mt-8 flex flex-wrap items-center gap-4"><Button asChild size="lg" className="h-12 rounded-full px-6"><Link href="/contact">Let’s work together <ArrowUpRight size={17} /></Link></Button><Link href="#selected-work" className="flex items-center gap-2 px-2 py-3 text-sm font-medium">Explore my work <ArrowDown size={15} /></Link></div>
         <p className="mt-7 font-mono text-[10px] uppercase tracking-[.15em] text-muted-foreground">Based in the Bronx · Working in English & Spanish</p>
+        <Link href="/about" className="mt-3 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary hover:underline">A little more about me <ArrowUpRight aria-hidden="true" size={14} /></Link>
       </div>
       <aside className="builder-note relative self-center rounded-2xl border border-[#cdd5c4] bg-[#e9eddf] p-7 sm:p-9">
         <div className="mb-9 flex items-center justify-between"><span className="eyebrow">From the workbench</span><span className="font-mono text-xs text-primary">LR / 01</span></div>

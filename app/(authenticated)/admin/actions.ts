@@ -9,12 +9,30 @@ import {
 } from "@/lib/admin/mutations";
 import { readString, requireFormId } from "@/lib/data/form";
 
+function revalidateAdminViews(table: string): void {
+  revalidatePath(`/admin/${table}`);
+  revalidatePath("/admin");
+  revalidatePath("/dashboard");
+
+  if (table === "projects") {
+    revalidatePath("/");
+    revalidatePath("/projects");
+    revalidatePath("/projects/[slug]", "page");
+    revalidatePath("/sitemap");
+    revalidatePath("/sitemap.xml");
+  }
+
+  if (table === "site-settings") {
+    revalidatePath("/");
+    revalidatePath("/contact");
+  }
+}
+
 export async function createAdminRecord(formData: FormData): Promise<void> {
   const table = readString(formData, "table");
 
   await createRecord(table, formData);
-  revalidatePath(`/admin/${table}`);
-  revalidatePath("/admin");
+  revalidateAdminViews(table);
 }
 
 export async function updateAdminRecord(formData: FormData): Promise<void> {
@@ -22,8 +40,7 @@ export async function updateAdminRecord(formData: FormData): Promise<void> {
   const id = requireFormId(formData);
 
   await updateRecord(table, id, formData);
-  revalidatePath(`/admin/${table}`);
-  revalidatePath("/admin");
+  revalidateAdminViews(table);
 }
 
 export async function deleteAdminRecord(formData: FormData): Promise<void> {
@@ -31,6 +48,5 @@ export async function deleteAdminRecord(formData: FormData): Promise<void> {
   const id = requireFormId(formData);
 
   await deleteRecord(table, id);
-  revalidatePath(`/admin/${table}`);
-  revalidatePath("/admin");
+  revalidateAdminViews(table);
 }
