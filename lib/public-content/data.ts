@@ -7,6 +7,9 @@ import { createClient } from "@/lib/supabase/server";
 export interface BlogPost {
   id: number;
   created_at: string;
+  published_at: string | null;
+  updated_at: string;
+  status: "draft" | "published";
   title: string | null;
   summary: string | null;
   tags: string | null;
@@ -14,16 +17,9 @@ export interface BlogPost {
   body: string | null;
 }
 
-export interface BlogPostWithStats extends BlogPost {
-  comment_count: number;
-  up_votes: number;
-  down_votes: number;
-}
-
 export interface BlogComment {
   id: number;
   post_id: number;
-  user_email: string | null;
   content: string | null;
   created_at: string | null;
 }
@@ -64,7 +60,7 @@ export interface SiteSettings {
 export async function getHomeContent() {
   const [settings, projects, posts] = await Promise.all([
     getSiteSettings(),
-    getProjects({ featuredOnly: true, limit: 3 }),
+    getProjects({ limit: 3 }),
     getBlogPosts({ limit: 3 }),
   ]);
 
@@ -87,15 +83,18 @@ export async function getSiteSettings(): Promise<SiteSettings | null> {
   return data as SiteSettings | null;
 }
 
-export async function getBlogPosts(options: { limit?: number } = {}): Promise<BlogPostWithStats[]> {
+export async function getBlogPosts(options: { limit?: number } = {}): Promise<BlogPost[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("get_blog_posts_with_stats");
+  const { data, error } = await supabase.from("blog_posts")
+    .select("id, created_at, published_at, updated_at, status, title, summary, tags, references, body")
+    .eq("status", "published")
+    .order("published_at", { ascending: false });
 
   if (error) {
     throw new Error("Could not load blog posts.");
   }
 
-  const posts = (data ?? []) as BlogPostWithStats[];
+  const posts = (data ?? []) as BlogPost[];
 
   return typeof options.limit === "number" ? posts.slice(0, options.limit) : posts;
 }
@@ -103,8 +102,6 @@ export async function getBlogPosts(options: { limit?: number } = {}): Promise<Bl
 export async function getBlogPost(id: string): Promise<{
   post: BlogPost;
   comments: BlogComment[];
-  upVotes: number;
-  downVotes: number;
 }> {
   const supabase = await createClient();
   const postId = Number(id);
@@ -113,14 +110,13 @@ export async function getBlogPost(id: string): Promise<{
     notFound();
   }
 
-  const [postResult, commentsResult, statsResult] = await Promise.all([
-    supabase.from("blog_posts").select("*").eq("id", postId).maybeSingle(),
+  const [postResult, commentsResult] = await Promise.all([
+    supabase.from("blog_posts").select("*").eq("id", postId).eq("status", "published").maybeSingle(),
     supabase
       .from("comments")
-      .select("id, post_id, user_email, content, created_at")
+      .select("id, post_id, content, created_at")
       .eq("post_id", postId)
       .order("created_at", { ascending: false }),
-    supabase.rpc("get_blog_posts_with_stats"),
   ]);
 
   if (postResult.error) {
@@ -131,17 +127,13 @@ export async function getBlogPost(id: string): Promise<{
     notFound();
   }
 
-  if (commentsResult.error || statsResult.error) {
+  if (commentsResult.error) {
     throw new Error("Could not load blog engagement.");
   }
-
-  const postStats = ((statsResult.data ?? []) as BlogPostWithStats[]).find((post) => post.id === postId);
 
   return {
     post: postResult.data as BlogPost,
     comments: (commentsResult.data ?? []) as BlogComment[],
-    upVotes: postStats?.up_votes ?? 0,
-    downVotes: postStats?.down_votes ?? 0,
   };
 }
 

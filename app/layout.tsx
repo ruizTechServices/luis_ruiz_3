@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, DM_Sans } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SiteNavbar } from "@/components/navigation/site-navbar";
 import { SiteFooter } from "@/components/navigation/site-footer";
 import { cn } from "@/lib/utils";
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/next";
+import { getSiteUrl } from "@/lib/seo/site-url";
 
-const dmSans = DM_Sans({subsets:['latin'],variable:'--font-sans'});
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,6 +20,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
   title: {
     default: "Luis Ruiz | Developer, AI Builder & Founder",
     template: "%s | Luis Ruiz",
@@ -31,7 +33,6 @@ export const metadata: Metadata = {
     "developer portfolio",
     "full-stack web developer",
     "AI builder",
-    "AI architect",
     "ruizTechServices LLC",
     "Next.js",
     "Supabase",
@@ -51,7 +52,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", dmSans.variable)}
+      className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans")}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>

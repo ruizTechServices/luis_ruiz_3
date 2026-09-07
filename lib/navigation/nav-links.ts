@@ -7,13 +7,7 @@ export interface NavLink {
 
 export const navLinks = [
   {
-    label: "Home",
-    href: "/",
-    ariaLabel: "Go to home page",
-    visibility: "always",
-  },
-  {
-    label: "Blog",
+    label: "Writing",
     href: "/blog",
     ariaLabel: "Go to blog page",
     visibility: "always",
@@ -25,7 +19,7 @@ export const navLinks = [
     visibility: "always",
   },
   {
-    label: "Contact",
+    label: "Let’s talk",
     href: "/contact",
     ariaLabel: "Go to contact page",
     visibility: "always",

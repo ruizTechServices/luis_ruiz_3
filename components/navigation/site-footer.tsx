@@ -1,30 +1,8 @@
+import Image from "next/image";
 import Link from "next/link";
-
-const footerLinks = [
-  { label: "Home", href: "/" },
-  { label: "Projects", href: "/projects" },
-  { label: "Blog", href: "/blog" },
-  { label: "Contact", href: "/contact" },
-  { label: "Sitemap", href: "/sitemap" },
-] as const;
-
 export function SiteFooter() {
-  return (
-    <footer className="mt-auto border-t border-border bg-background">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-8 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <p>© {new Date().getFullYear()} Luis Ruiz</p>
-        <nav aria-label="Footer navigation" className="flex flex-wrap gap-x-4 gap-y-2">
-          {footerLinks.map((link) => (
-            <Link
-              className="transition-colors hover:text-foreground hover:underline"
-              href={link.href}
-              key={link.href}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-      </div>
-    </footer>
-  );
+  return <footer className="mt-auto border-t border-border"><div className="site-container grid gap-8 py-10 sm:grid-cols-[1fr_auto] sm:items-center">
+    <div className="flex items-center gap-4"><Image src="/logo-lr.png" alt="Luis Ruiz monogram" width={64} height={64} className="rounded" /><div><p className="text-sm font-medium">Built with purpose. Always in progress.</p><p className="mt-2 text-xs text-muted-foreground">© {new Date().getFullYear()} Luis Ruiz · Bronx, New York</p></div></div>
+    <nav aria-label="Footer navigation" className="flex flex-wrap gap-x-5 gap-y-3 text-xs text-muted-foreground">{[{label:"GitHub",href:"https://github.com/ruizTechServices"},{label:"Writing",href:"/blog"},{label:"RSS",href:"/feed.xml"},{label:"Contact",href:"/contact"},{label:"Sitemap",href:"/sitemap"},{label:"My workspace",href:"/dashboard"}].map(link => <Link className="hover:text-primary hover:underline" href={link.href} key={link.href}>{link.label}</Link>)}</nav>
+  </div></footer>;
 }

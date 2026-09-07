@@ -1,5 +1,8 @@
-import { AdminTablePage } from "@/components/data/admin-table-page";
+import { redirect } from "next/navigation";
 
-export default function AdminBlogPostsPage() {
-  return <AdminTablePage slug="blog-posts" />;
+import { requireGioAdmin } from "@/lib/auth/admin";
+
+export default async function AdminBlogPostsPage() {
+  await requireGioAdmin();
+  redirect("/dashboard/write");
 }
