@@ -18,6 +18,11 @@ export function InquiryFollowUpForm({ inquiry }: { inquiry: FollowUpFields }) {
   const [dirty, setDirty] = useState(false);
   const [pending, startTransition] = useTransition();
 
+  function markChanged() {
+    setDirty(true);
+    setMessage("");
+  }
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -48,7 +53,7 @@ export function InquiryFollowUpForm({ inquiry }: { inquiry: FollowUpFields }) {
   }
 
   return (
-    <form onSubmit={submit} onChange={() => { setDirty(true); setMessage(""); }} className="border-t border-border pt-6">
+    <form onSubmit={submit} onInput={markChanged} onChange={markChanged} className="border-t border-border pt-6">
       <fieldset disabled={pending} className="grid gap-5 disabled:opacity-70">
         <legend className="mb-5 font-display text-xl">Plan the next step</legend>
         <label className="grid gap-1 text-sm">

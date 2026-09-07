@@ -86,7 +86,7 @@ begin
     network_key := md5(run_key || 'email-network' || step) || md5(run_key || 'email-network2' || step);
     fingerprint := md5(run_key || 'email-body' || step) || md5(run_key || 'email-body2' || step);
     result := public.accept_site_inquiry(gen_random_uuid(),payload || jsonb_build_object('message','Unique email threshold verification ' || step),network_key,email_key,fingerprint);
-    if result->>'status' <> case when step<=3 then 'accepted' else 'rate_limited' end then raise exception 'Email daily limit failed at %',step; end if;
+    if result->>'status' <> (case when step<=3 then 'accepted' else 'rate_limited' end) then raise exception 'Email daily limit failed at %',step; end if;
   end loop;
   if (select count(*) from public.contactlist where full_name='Verification ' || run_key) <> baseline_rows+3 then raise exception 'Rate-limited email was inserted'; end if;
 
@@ -96,7 +96,7 @@ begin
     email_key := md5(run_key || 'network-email' || step) || md5(run_key || 'network-email2' || step);
     fingerprint := md5(run_key || 'network-body' || step) || md5(run_key || 'network-body2' || step);
     result := public.accept_site_inquiry(gen_random_uuid(),payload || jsonb_build_object('message','Unique network threshold verification ' || step),network_key,email_key,fingerprint);
-    if result->>'status' <> case when step<=5 then 'accepted' else 'rate_limited' end then raise exception 'Network hourly limit failed at %',step; end if;
+    if result->>'status' <> (case when step<=5 then 'accepted' else 'rate_limited' end) then raise exception 'Network hourly limit failed at %',step; end if;
   end loop;
   if (select count(*) from public.contactlist where full_name='Verification ' || run_key) <> baseline_rows+5 then raise exception 'Rate-limited network was inserted'; end if;
 
