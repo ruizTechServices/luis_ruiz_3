@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowDown, ArrowRight, ArrowUpRight, AudioLines, Braces, Workflow, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProjectCard } from "@/components/projects/project-card";
@@ -6,6 +7,7 @@ import { PostList } from "@/components/content/post-list";
 import { getHomeContent } from "@/lib/public-content/data";
 import { pageMetadata } from "@/lib/seo/metadata";
 import { SOUND_CLIPS } from "@/lib/soundboard/catalog";
+import { getOAuthFailureReason, getOAuthFailureRedirect } from "@/lib/auth/oauth-errors";
 
 export const metadata = pageMetadata("Web Developer & Independent Builder", "I'm Luis Ruiz, a New York developer and founder of ruizTechServices. Explore my web projects, AI experiments, and build notes—or discuss your next project.", "/");
 const services = [
@@ -13,7 +15,13 @@ const services = [
   { icon: Wrench, title: "Get past a website blocker.", description: "Bring the bug, broken flow, or unfinished feature. We’ll define a focused scope and what a successful fix looks like.", link: "Tell me what’s broken", value: "Fix or improve a website" },
   { icon: Workflow, title: "Make repetitive work easier.", description: "Practical tools, integrations, and AI prototypes built around a specific task—with room to test and improve.", link: "Explore an idea", value: "AI integration or automation" },
 ];
-export default async function Home() {
+export default async function Home({ searchParams }: {
+  searchParams: Promise<{ error?: string | string[]; error_code?: string | string[]; next?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const authFailure = getOAuthFailureReason(params.error, params.error_code);
+  if (authFailure) redirect(getOAuthFailureRedirect(authFailure, params.next));
+
   const { settings, projects, posts } = await getHomeContent();
   return <main id="main-content">
     <section className="site-container relative grid gap-12 pb-16 pt-16 md:grid-cols-[1.3fr_.7fr] md:gap-14 md:pb-20 md:pt-24">

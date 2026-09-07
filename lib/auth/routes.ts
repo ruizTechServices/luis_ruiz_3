@@ -21,6 +21,15 @@ export function getSafeRedirectPath(value: FormDataEntryValue | null): string {
     return DEFAULT_AUTH_REDIRECT_PATH;
   }
 
+  // Browsers normalize backslashes and remove some control characters in URLs.
+  const hasControlCharacter = [...value].some((character) => {
+    const code = character.charCodeAt(0);
+    return code < 32 || code === 127;
+  });
+  if (value.includes("\\") || hasControlCharacter) {
+    return DEFAULT_AUTH_REDIRECT_PATH;
+  }
+
   if (value.startsWith(LOGIN_PATH) || value.startsWith("/auth")) {
     return DEFAULT_AUTH_REDIRECT_PATH;
   }

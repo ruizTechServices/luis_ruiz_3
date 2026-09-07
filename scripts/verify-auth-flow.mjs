@@ -191,6 +191,45 @@ try {
   failures.push(`password preservation regression: ${error instanceof Error ? error.message : String(error)}`);
 }
 
+try {
+  const routesUrl = typeScriptModuleUrl(readFileSync(path.join(root, "lib/auth/routes.ts"), "utf8"));
+  const { getSafeRedirectPath, DEFAULT_AUTH_REDIRECT_PATH } = await import(routesUrl);
+  const errorSource = readFileSync(path.join(root, "lib/auth/oauth-errors.ts"), "utf8")
+    .replace('"./routes"', JSON.stringify(routesUrl));
+  const { getOAuthFailureReason, getOAuthFailureRedirect, getOAuthFailureMessage } = await import(typeScriptModuleUrl(errorSource));
+
+  assert.equal(getOAuthFailureReason("invalid_request", "bad_oauth_state"), "expired");
+  assert.equal(getOAuthFailureReason(null, "flow_state_expired"), "expired");
+  assert.equal(getOAuthFailureReason("access_denied", null), "denied");
+  assert.equal(getOAuthFailureReason("server_error", null), "failed");
+  assert.equal(getOAuthFailureReason("unrelated-search-error", null), null);
+  assert.equal(getOAuthFailureReason(["invalid_request"], ["bad_oauth_state"]), null);
+  assert.equal(getOAuthFailureMessage("expired"), "That sign-in attempt expired or is no longer valid. Start a new sign-in below.");
+  assert.equal(getOAuthFailureMessage("<script>alert('provider text')</script>"), null);
+  assert.equal(getOAuthFailureMessage("__proto__"), null);
+  assert.equal(getOAuthFailureMessage(["expired"]), null);
+
+  const target = "/dashboard/write/new?view=preview";
+  const loginUrl = new URL(getOAuthFailureRedirect("expired", target), "https://www.luis-ruiz.com");
+  assert.equal(loginUrl.pathname, "/login");
+  assert.equal(loginUrl.searchParams.get("auth_error"), "expired");
+  assert.equal(loginUrl.searchParams.get("next"), target);
+  assert.deepEqual([...loginUrl.searchParams.keys()], ["auth_error", "next"]);
+  for (const unsafe of ["https://example.invalid/", "//example.invalid/", "/\\example.invalid/", "/\n/example.invalid/", "/login?next=/dashboard", "/auth/callback"]) {
+    assert.equal(getSafeRedirectPath(unsafe), DEFAULT_AUTH_REDIRECT_PATH);
+    const recovered = new URL(getOAuthFailureRedirect("failed", unsafe), "https://www.luis-ruiz.com");
+    assert.equal(recovered.searchParams.get("next"), DEFAULT_AUTH_REDIRECT_PATH);
+  }
+  assert.equal(getSafeRedirectPath(target), target);
+  assert.equal(new URL(getOAuthFailureRedirect("failed", [target]), "https://www.luis-ruiz.com").searchParams.get("next"), DEFAULT_AUTH_REDIRECT_PATH);
+
+  assert.ok(readFileSync(path.join(root, "app/page.tsx"), "utf8").includes("getOAuthFailureRedirect(authFailure, params.next)"));
+  assert.ok(readFileSync(path.join(root, "app/auth/callback/route.ts"), "utf8").includes("getOAuthFailureRedirect(providerFailure, next)"));
+  assert.ok(readFileSync(path.join(root, "app/login/page.tsx"), "utf8").includes("getOAuthFailureMessage(params.auth_error)"));
+} catch (error) {
+  failures.push(`OAuth failure recovery regression: ${error instanceof Error ? error.message : String(error)}`);
+}
+
 for (const [label, relativePath, verify] of checks) {
   const filePath = path.join(root, relativePath);
   const source = read(filePath);
@@ -230,6 +269,13 @@ if (failures.length > 0) {
 }
 
 console.log("Auth flow verification passed.");
+
+function typeScriptModuleUrl(source) {
+  const { outputText } = ts.transpileModule(source, {
+    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 },
+  });
+  return `data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`;
+}
 
 function read(filePath) {
   if (!existsSync(filePath)) {

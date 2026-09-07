@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 
 import { getSafeRedirectPath, LOGIN_PATH } from "@/lib/auth/routes";
+import { getOAuthFailureReason, getOAuthFailureRedirect } from "@/lib/auth/oauth-errors";
 import { createClient } from "@/lib/supabase/server";
 import { createOperationId } from "@/lib/logging/shared";
 import { serverLog, serverLogError } from "@/lib/logging/server";
@@ -15,6 +16,7 @@ export async function GET(request: Request) {
   const next = getSafeRedirectPath(requestUrl.searchParams.get("next"));
   const origin = getRequestOrigin(request, requestUrl.origin);
   const forwardedHost = request.headers.get("x-forwarded-host");
+  const providerFailure = getOAuthFailureReason(requestUrl.searchParams.get("error"), requestUrl.searchParams.get("error_code"));
 
   serverLog({
     scope: ROUTE_SCOPE,
@@ -28,6 +30,17 @@ export async function GET(request: Request) {
       nodeEnv: process.env.NODE_ENV,
     },
   });
+
+  if (providerFailure) {
+    serverLog({
+      scope: ROUTE_SCOPE,
+      level: "warn",
+      event: "provider_signin_failed",
+      requestId,
+      metadata: { reason: providerFailure, next },
+    });
+    return NextResponse.redirect(new URL(getOAuthFailureRedirect(providerFailure, next), origin));
+  }
 
   if (code) {
     const supabase = await createClient();
@@ -62,7 +75,7 @@ export async function GET(request: Request) {
     });
   }
 
-  return NextResponse.redirect(`${origin}${LOGIN_PATH}`);
+  return NextResponse.redirect(new URL(getOAuthFailureRedirect("failed", next), origin));
 }
 
 function getRequestOrigin(request: Request, fallbackOrigin: string): string {
