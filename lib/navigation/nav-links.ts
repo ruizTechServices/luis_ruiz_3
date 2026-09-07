@@ -19,6 +19,12 @@ export const navLinks = [
     visibility: "always",
   },
   {
+    label: "Soundboard",
+    href: "/soundboard",
+    ariaLabel: "Go to soundboard",
+    visibility: "always",
+  },
+  {
     label: "Let’s talk",
     href: "/contact",
     ariaLabel: "Go to contact page",

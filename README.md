@@ -1,6 +1,6 @@
 # luis-ruiz.com
 
-Luis Giovanni Ruiz’s public portfolio, project case studies, blog, and contact page, with a private daily dashboard and story editor. Built with Next.js App Router, React, TypeScript, and the existing Supabase database and authentication.
+Luis Giovanni Ruiz’s public portfolio, project case studies, blog, soundboard, and contact page, with a private daily dashboard and story editor. Built with Next.js App Router, React, TypeScript, and the existing Supabase database and authentication.
 
 **Start with the [daily operations guide](docs/portfolio-operations.md)** for writing, publishing, managing inquiries, maintaining projects, deployment, and recovery.
 
@@ -45,6 +45,7 @@ Open `http://localhost:3000`. `/dashboard` is the daily workspace; `/dashboard/w
 npm run lint
 npx tsc --noEmit
 npm run test:auth
+npm run test:soundboard
 npm run build
 npm run test:sitemap
 npm run start

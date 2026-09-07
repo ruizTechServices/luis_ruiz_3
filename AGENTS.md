@@ -8,6 +8,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # AGENTS.md — Project Briefing for AI Assistants
 
+> **Preserve the public soundboard:** `/soundboard` restores all 16 original MP3s in `public/sounds/`, with the typed catalog in `lib/soundboard/catalog.ts`. These runtime URL references are intentional; do not remove their files as unused during cleanup. See `docs/soundboard-provenance.md` and run `npm run test:soundboard` when changing the catalog or player. Keep existing sound IDs stable for saved favorites and shared links.
+
 > **Current release note — 2026-09-07:** Production is confirmed on Vercel project `luis-ruiz-3`, from `ruizTechServices/luis_ruiz_3`, at `https://www.luis-ruiz.com`. Keep `_3` as the active repository. The existing Supabase project `huyhgdsjpdjzokjwaspb` is accessible in this session; the older access-failure notes below describe prior sessions. Publishing and privacy migrations have been applied and verified with database role tests. Owner identity now comes from the confirmed `auth.users` record through `public.is_gio_admin()`, independent of profile roles. Read [the current operations guide](docs/portfolio-operations.md) for the story editor, daily dashboard, exact release checks, and the remaining owner browser verification. Historical notes below are context, not current deployment evidence.
 
 > Last updated: 2026-08-21 04:05 UTC

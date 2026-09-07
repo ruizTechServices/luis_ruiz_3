@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { ArrowDown, ArrowRight, ArrowUpRight, Braces, Workflow, Wrench } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUpRight, AudioLines, Braces, Workflow, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProjectCard } from "@/components/projects/project-card";
 import { PostList } from "@/components/content/post-list";
 import { getHomeContent } from "@/lib/public-content/data";
 import { pageMetadata } from "@/lib/seo/metadata";
+import { SOUND_CLIPS } from "@/lib/soundboard/catalog";
 
 export const metadata = pageMetadata("Web Developer & Independent Builder", "I'm Luis Ruiz, a New York developer and founder of ruizTechServices. Explore my web projects, AI experiments, and build notes—or discuss your next project.", "/");
 const services = [
@@ -39,6 +40,13 @@ export default async function Home() {
     </section>
     <section className="border-y border-border bg-[#eef0e8]" id="work-together"><div className="site-container py-16 sm:py-20"><p className="eyebrow mb-3">02 / How I can help</p><h2 className="font-display max-w-xl text-4xl sm:text-5xl">A practical next step<br />for your next big thing.</h2><div className="mt-10 grid gap-8 md:grid-cols-3">{services.map(({icon:Icon,...service}) => <article key={service.title} className="flex flex-col border-t border-[#cbd1c4] pt-6"><Icon size={25} strokeWidth={1.3} className="mb-6 text-primary" /><h3 className="text-lg font-semibold">{service.title}</h3><p className="mt-3 flex-1 text-sm leading-7 text-muted-foreground">{service.description}</p><Link href={`/contact?service=${encodeURIComponent(service.value)}`} className="text-link mt-6">{service.link} <ArrowUpRight size={16} /></Link></article>)}</div></div></section>
     <section className="site-container py-16 sm:py-24"><div className="section-heading"><div><p className="eyebrow mb-3">03 / The notebook</p><h2 className="font-display text-4xl sm:text-5xl">Learning out loud.</h2></div><Link href="/blog" className="text-link">All writing <ArrowUpRight size={17} /></Link></div><p className="mb-8 mt-4 text-muted-foreground">Build notes, technical experiments, and a few things on my mind.</p><PostList posts={posts} /></section>
+    <section id="soundboard" className="site-container pb-16">
+      <div className="grid items-center gap-7 rounded-2xl border border-[#ded4b9] bg-[#f2eddc] p-7 sm:p-10 md:grid-cols-[auto_1fr_auto]">
+        <div aria-hidden="true" className="flex size-20 items-center justify-center rounded-2xl border border-[#d7c9a3] bg-[#e7ddbd] text-[#6d5726]"><AudioLines size={40} strokeWidth={1.3} /></div>
+        <div><p className="eyebrow mb-3 text-[#796333]">A little detour</p><h2 className="font-display text-3xl sm:text-4xl">The soundboard is back.</h2><p className="mt-3 max-w-xl text-sm leading-7 text-muted-foreground">{SOUND_CLIPS.length} sounds from my original collection. Find your favorite reaction, save it for next time, or send it to a friend.</p></div>
+        <Link href="/soundboard" className="inline-flex w-fit items-center gap-4 rounded-full border border-[#b7a575] px-5 py-4 text-sm font-semibold text-[#5b471e] transition-colors hover:bg-[#e7ddbd]">Open soundboard <ArrowUpRight size={17} /></Link>
+      </div>
+    </section>
     <section className="site-container pb-20"><div className="grid gap-8 rounded-2xl bg-primary px-7 py-12 text-primary-foreground md:grid-cols-[1fr_auto] md:items-center md:px-12"><div><p className="mb-4 font-mono text-[10px] uppercase tracking-[.18em] text-white/70">Have something in mind?</p><h2 className="font-display text-4xl sm:text-5xl">Let’s make it work.</h2><p className="mt-4 max-w-lg text-sm leading-7 text-white/80">Tell me what you need, what’s getting in the way, and where you want to go. We’ll start with a clear conversation.</p></div><Link href="/contact" className="inline-flex w-fit items-center gap-6 rounded-full bg-[#f7f7f2] px-6 py-4 text-sm font-semibold text-primary">Start a conversation <ArrowRight size={18} /></Link></div></section>
   </main>;
 }

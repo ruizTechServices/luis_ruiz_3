@@ -72,6 +72,13 @@ const STATIC_ROUTES = [
     priority: 0.85,
   },
   {
+    path: "/soundboard",
+    label: "Soundboard",
+    description: "Play Gio’s original reaction sounds, save favorites, and share a sound.",
+    changeFrequency: "weekly",
+    priority: 0.8,
+  },
+  {
     path: "/contact",
     label: "Contact",
     description: "Project inquiry page for reaching Gio directly.",
