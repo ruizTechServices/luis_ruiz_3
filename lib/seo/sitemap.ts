@@ -9,6 +9,8 @@ import { getSupabasePublishableKey, getSupabaseUrl } from "@/lib/supabase/env";
 type SitemapEntry = MetadataRoute.Sitemap[number];
 
 interface SitemapBlogPost {
+  updated_at: string | null;
+  published_at: string | null;
   id: number;
   title: string | null;
   summary: string | null;
@@ -82,7 +84,7 @@ export async function buildSitemap(): Promise<MetadataRoute.Sitemap> {
   const [projects, posts] = await Promise.all([getSitemapProjects(), getSitemapBlogPosts()]);
   const latestContentDate = latestDate([
     ...projects.map((project) => project.updated_at ?? project.created_at),
-    ...posts.map((post) => post.created_at),
+    ...posts.map((post) => post.updated_at ?? post.published_at ?? post.created_at),
   ]);
 
   const staticEntries = STATIC_ROUTES.map((route) => ({
@@ -108,7 +110,7 @@ export async function buildSitemap(): Promise<MetadataRoute.Sitemap> {
 
   const blogEntries = posts.map((post) => ({
     url: absoluteUrl(`/blog/${post.id}`),
-    lastModified: toDate(post.created_at),
+    lastModified: toDate(post.updated_at ?? post.published_at ?? post.created_at),
     changeFrequency: "monthly",
     priority: 0.75,
   })) satisfies MetadataRoute.Sitemap;
@@ -120,7 +122,7 @@ export async function buildPublicSitemapGroups(): Promise<PublicSitemapGroup[]> 
   const [projects, posts] = await Promise.all([getSitemapProjects(), getSitemapBlogPosts()]);
   const latestContentDate = latestDate([
     ...projects.map((project) => project.updated_at ?? project.created_at),
-    ...posts.map((post) => post.created_at),
+    ...posts.map((post) => post.updated_at ?? post.published_at ?? post.created_at),
   ]).toISOString();
 
   return [
@@ -155,7 +157,7 @@ export async function buildPublicSitemapGroups(): Promise<PublicSitemapGroup[]> 
         href: `/blog/${post.id}`,
         label: post.title ?? `Post ${post.id}`,
         description: post.summary ?? "Article from the public blog archive.",
-        lastModified: post.created_at,
+        lastModified: post.updated_at ?? post.published_at ?? post.created_at,
         meta: "Article",
       })),
     },
@@ -182,7 +184,7 @@ async function getSitemapBlogPosts(): Promise<SitemapBlogPost[]> {
   const supabase = createPublicSupabaseClient();
   const { data, error } = await supabase
     .from("blog_posts")
-    .select("id, title, summary, created_at")
+    .select("id, title, summary, created_at, updated_at, published_at")
     .eq("status", "published")
     .order("created_at", { ascending: false });
 

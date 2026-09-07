@@ -118,7 +118,7 @@ export function StoryEditor({ initialStory }: { initialStory: EditorStory | null
     <main id="main-content" className="mx-auto min-h-screen max-w-6xl px-4 pb-20 sm:px-8">
       <div className="sticky top-20 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-background/95 py-4 backdrop-blur-sm">
         <div className="flex items-center gap-4">
-          <Link href="/dashboard/write" className="inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft size={16} /><span className="hidden sm:inline">Your stories</span></Link>
+          <Link href="/dashboard/write" aria-label="Your stories" className="inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft size={16} /><span className="hidden sm:inline">Your stories</span></Link>
           <span className="border-l border-border pl-4 text-xs text-muted-foreground" role="status" aria-live="polite">{pending ? "Saving…" : dirty ? "Unsaved changes" : story ? "All changes saved" : "New story"}</span>
         </div>
         <div className="flex flex-wrap items-center gap-2">

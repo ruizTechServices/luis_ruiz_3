@@ -17,7 +17,7 @@ export default async function SitemapPage() {
   const totalLinks = groups.reduce((total, group) => total + group.links.length, 0);
 
   return (
-    <main className="mx-auto grid min-h-screen w-full max-w-5xl content-start gap-8 px-6 py-16">
+    <main id="main-content" className="mx-auto grid min-h-screen w-full max-w-5xl content-start gap-8 px-6 py-16">
       <section className="grid gap-4">
         <div className="grid gap-2">
           <h1 className="text-3xl font-semibold tracking-normal">Sitemap</h1>

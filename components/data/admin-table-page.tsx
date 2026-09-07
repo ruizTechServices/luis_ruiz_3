@@ -14,7 +14,7 @@ export async function AdminTablePage({ slug }: { slug: string }) {
   const { config, rows } = await getAdminRows(slug);
 
   return (
-    <main className="mx-auto grid min-h-screen w-full max-w-5xl content-start gap-6 px-6 py-16">
+    <main id="main-content" className="mx-auto grid min-h-screen w-full max-w-5xl content-start gap-6 px-6 py-16">
       <section className="grid gap-2">
         <Link className="text-sm font-medium text-primary hover:underline" href="/admin">
           Admin

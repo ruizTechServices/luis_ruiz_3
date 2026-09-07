@@ -15,7 +15,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const nextPath = getSafeRedirectPath(params.next ?? null);
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-6 py-16">
+    <main id="main-content" className="flex min-h-screen items-center justify-center px-6 py-16">
       <section className="grid w-full max-w-sm gap-6">
         <div className="grid gap-2">
           <h1 className="text-2xl font-semibold tracking-normal">Sign in</h1>

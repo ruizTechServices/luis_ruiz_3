@@ -28,7 +28,7 @@ export default async function DashboardPage() {
   ]);
 
   return (
-    <main className="mx-auto grid w-full max-w-6xl gap-9 px-6 py-12 sm:py-16">
+    <main id="main-content" className="mx-auto grid w-full max-w-6xl gap-9 px-6 py-12 sm:py-16">
       <header className="flex flex-wrap items-end justify-between gap-6">
         <div>
           <p className="eyebrow">Your workspace</p>

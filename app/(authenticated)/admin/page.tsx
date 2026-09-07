@@ -6,7 +6,7 @@ export default async function AdminPage() {
   const { adminCounts } = await getAdminOverview();
 
   return (
-    <main className="mx-auto grid min-h-screen w-full max-w-5xl content-start gap-8 px-6 py-16">
+    <main id="main-content" className="mx-auto grid min-h-screen w-full max-w-5xl content-start gap-8 px-6 py-16">
       <section className="grid gap-2">
         <h1 className="text-3xl font-semibold tracking-normal">Admin</h1>
         <p className="text-sm text-muted-foreground">
