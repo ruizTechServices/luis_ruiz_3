@@ -15,16 +15,16 @@ export interface SoundPreferences {
 
 export function parseSoundPreferences(raw: string | null): SoundPreferences {
   const defaults: SoundPreferences = { favorites: [], recent: [], volume: 0.72, muted: false, keyboardEnabled: true };
-  if (!raw || raw.length > 20_000) return defaults;
+  if (!raw || raw.length > 40_000) return defaults;
   try {
     const value: unknown = JSON.parse(raw);
     if (!value || typeof value !== "object" || Array.isArray(value)) return defaults;
     const data = value as Record<string, unknown>;
     const validIds = (items: unknown, limit: number) => Array.isArray(items)
-      ? [...new Set(items.filter((id): id is string => typeof id === "string" && knownIds.has(id)))].slice(0, limit)
+      ? [...new Set(items.filter((id): id is string => typeof id === "string" && (knownIds.has(id) || /^sound-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(id))))].slice(0, limit)
       : [];
     return {
-      favorites: validIds(data.favorites, SOUND_CLIPS.length),
+      favorites: validIds(data.favorites, 500),
       recent: validIds(data.recent, 6),
       volume: typeof data.volume === "number" && Number.isFinite(data.volume) ? Math.min(1, Math.max(0, data.volume)) : 0.72,
       muted: data.muted === true,

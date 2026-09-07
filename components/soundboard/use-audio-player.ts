@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { SOUND_CLIPS, type SoundClip } from "@/lib/soundboard/catalog";
+import { type SoundClip } from "@/lib/soundboard/catalog";
 import { safeSeek } from "@/lib/soundboard/preferences";
 
 type PlaybackPhase = "ready" | "loading" | "playing" | "paused" | "stopped" | "ended" | "error";
 
-export function useAudioPlayer({ initialSoundId, volume, muted, onPlayed }: { initialSoundId: string | null; volume: number; muted: boolean; onPlayed: (id: string) => void }) {
+export function useAudioPlayer({ clips, initialSoundId, volume, muted, onPlayed }: { clips: readonly SoundClip[]; initialSoundId: string | null; volume: number; muted: boolean; onPlayed: (id: string, newPlay: boolean) => void }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const requestRef = useRef(0);
   const intentRef = useRef<"play" | "pause" | "stop">("stop");
@@ -16,7 +16,7 @@ export function useAudioPlayer({ initialSoundId, volume, muted, onPlayed }: { in
   const [elapsed, setElapsed] = useState(0);
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const selected = SOUND_CLIPS.find((clip) => clip.id === selectedId) ?? null;
+  const selected = clips.find((clip) => clip.id === selectedId) ?? null;
 
   useEffect(() => {
     if (audioRef.current) {
@@ -37,6 +37,7 @@ export function useAudioPlayer({ initialSoundId, volume, muted, onPlayed }: { in
     const audio = audioRef.current;
     if (!audio) return;
     const request = ++requestRef.current;
+    const previousIntent = intentRef.current;
     intentRef.current = "play";
     setError(null);
     setSelectedId(sound.id);
@@ -47,7 +48,8 @@ export function useAudioPlayer({ initialSoundId, volume, muted, onPlayed }: { in
       if (!sourceChanged) audio.load();
       setDuration(0);
     }
-    if (restart || sourceChanged || audio.ended) {
+    const newPlay = restart || sourceChanged || audio.ended || previousIntent === "stop";
+    if (newPlay) {
       try { audio.currentTime = 0; } catch { /* New sources already start at zero. */ }
       setElapsed(0);
     }
@@ -56,7 +58,7 @@ export function useAudioPlayer({ initialSoundId, volume, muted, onPlayed }: { in
       await audio.play();
       if (request !== requestRef.current) return;
       setPhase("playing");
-      onPlayed(sound.id);
+      onPlayed(sound.id, newPlay);
     } catch (failure) {
       if (request !== requestRef.current) return;
       intentRef.current = "stop";

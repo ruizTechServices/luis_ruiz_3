@@ -6,7 +6,6 @@ import { ProjectCard } from "@/components/projects/project-card";
 import { PostList } from "@/components/content/post-list";
 import { getHomeContent } from "@/lib/public-content/data";
 import { pageMetadata } from "@/lib/seo/metadata";
-import { SOUND_CLIPS } from "@/lib/soundboard/catalog";
 import { getOAuthFailureReason, getOAuthFailureRedirect } from "@/lib/auth/oauth-errors";
 
 export const metadata = pageMetadata("Web Developer & Independent Builder", "I'm Luis Ruiz, a New York developer and founder of ruizTechServices. Explore my web projects, AI experiments, and build notes—or discuss your next project.", "/");
@@ -51,7 +50,7 @@ export default async function Home({ searchParams }: {
     <section id="soundboard" className="site-container pb-16">
       <div className="grid items-center gap-7 rounded-2xl border border-[#ded4b9] bg-[#f2eddc] p-7 sm:p-10 md:grid-cols-[auto_1fr_auto]">
         <div aria-hidden="true" className="flex size-20 items-center justify-center rounded-2xl border border-[#d7c9a3] bg-[#e7ddbd] text-[#6d5726]"><AudioLines size={40} strokeWidth={1.3} /></div>
-        <div><p className="eyebrow mb-3 text-[#796333]">A little detour</p><h2 className="font-display text-3xl sm:text-4xl">The soundboard is back.</h2><p className="mt-3 max-w-xl text-sm leading-7 text-muted-foreground">{SOUND_CLIPS.length} sounds from my original collection. Find your favorite reaction, save it for next time, or send it to a friend.</p></div>
+        <div><p className="eyebrow mb-3 text-[#796333]">A little detour</p><h2 className="font-display text-3xl sm:text-4xl">A sound for the moment.</h2><p className="mt-3 max-w-xl text-sm leading-7 text-muted-foreground">Explore my collection of reactions and sound effects. Find a favorite, save it for next time, or share it with a friend.</p></div>
         <Link href="/soundboard" className="inline-flex w-fit items-center gap-4 rounded-full border border-[#b7a575] px-5 py-4 text-sm font-semibold text-[#5b471e] transition-colors hover:bg-[#e7ddbd]">Open soundboard <ArrowUpRight size={17} /></Link>
       </div>
     </section>

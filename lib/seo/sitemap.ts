@@ -86,6 +86,13 @@ const STATIC_ROUTES = [
     priority: 0.7,
   },
   {
+    path: "/privacy",
+    label: "Privacy & preferences",
+    description: "How this site uses information and your optional measurement preference.",
+    changeFrequency: "yearly",
+    priority: 0.3,
+  },
+  {
     path: "/sitemap",
     label: "Sitemap",
     description: "Human-readable directory of public pages on this site.",

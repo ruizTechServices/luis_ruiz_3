@@ -7,6 +7,17 @@ export interface SoundClip {
   hotkey: string;
   category: SoundCategory;
   durationSeconds: number;
+  dailyPick?: boolean;
+}
+
+export const SOUND_CATEGORIES = ["Reactions", "Comedy", "Effects"] as const;
+export type SoundStatus = "draft" | "published" | "archived";
+export interface ManagedSoundClip extends SoundClip {
+  status: SoundStatus;
+  dailyPick: boolean;
+  original: boolean;
+  sortOrder: number;
+  updatedAt: string;
 }
 
 // Original archive and pad order recovered from luis_ruiz_2 at 97ea4af.

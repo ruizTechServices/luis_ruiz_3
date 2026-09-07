@@ -4,7 +4,8 @@ import "./globals.css";
 import { SiteNavbar } from "@/components/navigation/site-navbar";
 import { SiteFooter } from "@/components/navigation/site-footer";
 import { cn } from "@/lib/utils";
-import { Analytics } from "@vercel/analytics/next";
+import { SiteMeasurement } from "@/components/analytics/site-measurement";
+import { getAuthenticatedUser } from "@/lib/auth/session";
 import { getSiteUrl } from "@/lib/seo/site-url";
 
 
@@ -44,11 +45,12 @@ export const metadata: Metadata = {
   publisher: "ruizTechServices LLC",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await getAuthenticatedUser();
   return (
     <html
       lang="en"
@@ -59,7 +61,7 @@ export default function RootLayout({
         <SiteNavbar />
         {children}
         <SiteFooter />
-        <Analytics />
+        <SiteMeasurement enabled={!user} />
       </body>
     </html>
   );

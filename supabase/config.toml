@@ -39,7 +39,7 @@ shadow_port = 54320
 health_timeout = "2m"
 # The database major version to use. This has to be the same as your remote database's. Run `SHOW
 # server_version;` on the remote database to check.
-major_version = 17
+major_version = 15
 
 [db.pooler]
 enabled = false
@@ -411,3 +411,13 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # declarative_schema_path = "./database"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# These workers perform explicit publishable-key or owner/cron verification.
+[functions.site-inquiries]
+verify_jwt = false
+
+[functions.site-metrics]
+verify_jwt = false
+
+[functions.site-inquiry-alerts]
+verify_jwt = false

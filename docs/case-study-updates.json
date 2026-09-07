@@ -1,0 +1,77 @@
+{
+  "reviewed_at": "2026-09-07",
+  "status": "Reviewed content updates. Apply after the screenshot and owner sound-management release is deployed and verified. Guard project IDs, slugs, and reviewed timestamps.",
+  "projects": [
+    {
+      "id": 5,
+      "expected_slug": "catherine-ruiz-s-website-a-website-for-catherine-ruiz-",
+      "fields": {
+        "summary": "A bilingual business website that brings Catherine’s introduction, Avon brochures, and a direct call action into one place.",
+        "description": "A public website for Catherine Ruiz’s independent Avon business. English and Spanish copy sit together in the introduction; visitors can choose a brochure language and call Catherine for orders or a consultation.",
+        "role": "Website development — the public introduction, bilingual brochure experience, and click-to-call contact flow.",
+        "context": "Catherine serves customers in English and Spanish. The site gives her business a recognizable home alongside the campaign brochures supplied by Avon.",
+        "problem": "A visitor needs to understand who Catherine is, browse the relevant brochure, and know how to ask about an order without searching through unrelated pages.",
+        "constraints": "Avon supplies the embedded campaign brochures and their viewer. Campaign dates and content change, while the introduction and contact path need to remain clear in both languages.",
+        "approach": "Put Catherine’s name, portrait, and bilingual introduction first. Keep the call action beside that introduction, then give the brochure its own section with an explicit English/Español choice.",
+        "architecture": "The public homepage combines bilingual text, a telephone link, and an embedded brochure viewer. Language buttons switch the visible English or Spanish brochure. About and Blog remain separate public pages.",
+        "decisions": "Show the introductory copy in both languages together so visitors can read it immediately. Keep brochure language selection separate from that introduction. Use a direct telephone link for orders and consultations instead of adding an account requirement.",
+        "outcomes": "The live homepage presents English and Spanish copy together. The brochure selector was checked in both languages: Español displayed Spanish viewer controls and campaign content. The call action uses a telephone link. The page credits Luis Ruiz for the site.",
+        "current_status": "Live business website. Brochure editions and campaign content are maintained separately from this portfolio. The screenshots document the public experience on September 7, 2026."
+      },
+      "expected_updated_at": "2026-09-07T15:19:23.621838+00:00"
+    },
+    {
+      "id": 6,
+      "expected_slug": "ruiztechservices-",
+      "fields": {
+        "summary": "My tech services business website: recognizable customer problems, a shared service catalog, and an inquiry form that collects context before work begins.",
+        "description": "The public website for ruizTechServices LLC, my New York business. It explains local tech help for homes and small businesses, presents a scoped Tech Rescue offer, and lets visitors describe what they need.",
+        "role": "Founder and website developer — service presentation, page structure, and the inquiry workflow.",
+        "stack": [
+          "Next.js",
+          "React",
+          "TypeScript",
+          "Tailwind CSS",
+          "Supabase"
+        ],
+        "context": "The site is the public entry point for my local tech services business. It connects a visitor’s everyday problem with a service explanation and a request for help.",
+        "problem": "A visitor may know that a printer, computer, or connection is failing without knowing which technical service to request. The site needs to start with their problem and gather enough context for a useful first conversation.",
+        "constraints": "Service scope varies by the issue. Offers need explicit deliverables and exclusions, while the visitor-facing language needs to be understandable to people without a technical background.",
+        "approach": "Lead with common problems, separate home and small-business use cases, and explain the steps from inquiry to a scoped visit. A structured form collects the issue, support preference, urgency, and optional budget.",
+        "architecture": "A Next.js App Router site uses React components and a typed service catalog. The same catalog supplies active offers to the homepage, navigation, and service pages. A server action formats contact and qualification fields into a Supabase inquiry record.",
+        "decisions": "Keep service definitions in one typed configuration so price, scope, deliverables, exclusions, and calls to action can be reviewed together. Separate the service offer from this personal portfolio. Ask for the problem and practical constraints before proposing work.",
+        "outcomes": "The live homepage presents eight common problem categories, home and business entry points, and a Request Help action. The source connects active service definitions to public pages and includes an inquiry action that writes the submitted context to Supabase. These are implementation outcomes; no sales uplift is claimed.",
+        "current_status": "Active business website. The public pages and matching source were reviewed on September 7, 2026. Contact submission delivery was not exercised during this case-study review.",
+        "repo_url": "https://github.com/ruizTechServices/ruiztechservices-website"
+      },
+      "expected_updated_at": "2026-09-07T15:19:23.621838+00:00"
+    },
+    {
+      "id": 14,
+      "expected_slug": "gios-soundboard",
+      "fields": {
+        "summary": "A browser soundboard restored from 16 original clips, with saved favorites, shareable links, and an owner dashboard for adding new sounds.",
+        "description": "A public interactive feature on my portfolio, restored from the earlier website and expanded with a managed catalog. Visitors can play without an account; I can add, preview, publish, and archive sound pads from my dashboard.",
+        "role": "Product owner and developer — audio recovery, playback and keyboard controls, browser preferences, and the owner publishing workflow.",
+        "context": "My earlier site had a soundboard people could play with. Restoring it gives visitors a practical interactive demo of the work, as well as a small reason to come back.",
+        "problem": "The original player and audio files were removed during a cleanup. The collection needed to be recovered intact, made easy to revisit, and expanded without editing application code for every new sound.",
+        "constraints": "Preserve the original MP3 bytes, IDs, paths, and shortcuts. Avoid autoplay and overlapping audio. Keep playback available without an account, restrict catalog management to the owner, and make the distinction between an unpublished pad and a public audio URL explicit.",
+        "approach": "Recover and fingerprint the archived audio, then separate the catalog, player, and preference logic. Put search and filters beside the pads. Add an owner workflow that validates a file, saves its pad as a draft, and lets me preview it before publication.",
+        "architecture": "Next.js reads published sound rows from Supabase and passes the catalog to a React interface controlling one HTML audio element. A protected Node.js route checks MP3 or PCM WAV file structure and upload limits; MP3s also undergo server-side WebAssembly decoding with mpg123 before storage. Each upload gets a new Supabase Storage path and a draft catalog row. Owner authorization and row policies restrict management, while column permissions preserve original IDs, file paths, and shortcuts. The original MP3s remain in the repository; favorites, recent sounds, volume, and keyboard settings remain in each visitor’s browser.",
+        "decisions": "Use one audio element to keep pause, stop, and restart explicit. Shared URLs select a sound without autoplay, and stable IDs keep saved favorites usable. Start new pads as drafts and make publication an owner action. Check actual audio contents, cap uploads at 3 MB and 60 seconds, and reject MP3 decoding errors or all-silent output. Uploaded MP3 frames are preserved after ID3 removal. Archive pads without deleting audio, and disclose that audio URLs remain public while a pad is a draft or archived. A catalog outage shows an unavailable state, so archived pads cannot reappear through a fallback.",
+        "outcomes": "All 16 original MP3s were recovered byte for byte, including a clip omitted from the earlier pad list. The public player includes search, filters, favorites, recent sounds, random playback, shared selections, and keyboard controls. The owner workflow adds upload, preview, label/category/order editing, daily-pick eligibility, publication, and archiving. Regression checks cover original asset hashes, browser preferences, MP3 decoding, audio-file structure, upload limits, seeking, and keyboard handling.",
+        "current_status": "Live public demo with an owner-managed catalog. Only published pads appear in normal catalog reads; uploaded audio URLs are public, including while a pad is unpublished. Preferences remain specific to each browser. The screenshots document the original restored collection on September 7, 2026.",
+        "stack": [
+          "Next.js",
+          "React",
+          "TypeScript",
+          "Supabase",
+          "WebAssembly",
+          "HTML audio",
+          "localStorage"
+        ]
+      },
+      "expected_updated_at": "2026-09-07T17:44:55.979137+00:00"
+    }
+  ]
+}
