@@ -1,60 +1,14 @@
 import Link from "next/link";
-
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatDate } from "@/lib/data/format";
+import { articleDate, safeExternalUrl } from "@/lib/content/format";
 import { getProjectBySlug } from "@/lib/public-content/data";
-
-export default async function ProjectPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  const project = await getProjectBySlug(slug);
-
-  const sections = [
-    ["Context", project.context],
-    ["Problem", project.problem],
-    ["Constraints", project.constraints],
-    ["Approach", project.approach],
-    ["Architecture", project.architecture],
-    ["Decisions", project.decisions],
-    ["Outcomes", project.outcomes],
-    ["Current status", project.current_status],
-  ] as const;
-
-  return (
-    <main className="mx-auto grid min-h-screen w-full max-w-3xl content-start gap-8 px-6 py-16">
-      <section className="grid gap-3">
-        <p className="text-sm text-muted-foreground">
-          {project.category ?? "project"} | {project.status ?? "active"} | Updated{" "}
-          {formatDate(project.updated_at)}
-        </p>
-        <h1 className="text-3xl font-semibold tracking-normal">{project.title ?? project.slug}</h1>
-        <p className="text-muted-foreground">{project.summary ?? project.description ?? "No summary yet."}</p>
-        <div className="flex flex-wrap gap-2">
-          {project.live_url ? (
-            <Button asChild size="sm">
-              <Link href={project.live_url}>Live</Link>
-            </Button>
-          ) : null}
-          {project.repo_url ? (
-            <Button asChild size="sm" variant="outline">
-              <Link href={project.repo_url}>Repo</Link>
-            </Button>
-          ) : null}
-        </div>
-      </section>
-      <section className="grid gap-4">
-        {sections.map(([label, value]) =>
-          value ? (
-            <article className="rounded-md border border-border p-4" key={label}>
-              <h2 className="text-sm font-semibold tracking-normal">{label}</h2>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted-foreground">{value}</p>
-            </article>
-          ) : null,
-        )}
-      </section>
-    </main>
-  );
+import { pageMetadata } from "@/lib/seo/metadata";
+type Props = { params: Promise<{slug:string}> };
+export async function generateMetadata({params}:Props) { const {slug}=await params; const p=await getProjectBySlug(slug); return pageMetadata(p.title ?? "Project", p.summary ?? p.description ?? "A project by Luis Ruiz.", `/projects/${slug}`); }
+export default async function ProjectPage({params}:Props) {
+  const {slug}=await params; const project=await getProjectBySlug(slug);
+  const liveUrl=safeExternalUrl(project.live_url ?? project.url); const repoUrl=safeExternalUrl(project.repo_url);
+  const sections=[["The context",project.context],["The problem",project.problem],["Constraints",project.constraints],["The approach",project.approach],["Architecture",project.architecture],["Key decisions",project.decisions],["What it delivers",project.outcomes],["Where it stands",project.current_status]] as const;
+  return <main id="main-content" className="site-container py-14 sm:py-20"><Link href="/projects" className="text-link mb-9 text-muted-foreground"><ArrowLeft size={16}/> All projects</Link><div className="grid gap-10 lg:grid-cols-[1fr_280px]"><div><p className="eyebrow mb-4">{project.slug === "ruiztechservices-" ? "My business" : project.category === "experiment" ? "Independent experiment" : "Web project"} · Updated {articleDate(project.updated_at)}</p><h1 className="font-display text-5xl leading-tight sm:text-6xl">{project.title}</h1><p className="mt-6 max-w-2xl text-xl leading-9 text-muted-foreground">{project.summary ?? project.description}</p><div className="mt-7 flex gap-3">{liveUrl ? <Button asChild className="rounded-full"><a href={liveUrl} target="_blank" rel="noopener noreferrer">Visit website <ArrowUpRight size={15}/></a></Button>:null}{repoUrl ? <Button asChild variant="outline" className="rounded-full"><a href={repoUrl} target="_blank" rel="noopener noreferrer">View source <ArrowUpRight size={15}/></a></Button>:null}</div></div><aside className="h-fit rounded-xl border border-border bg-card p-6"><p className="eyebrow">My role</p><p className="mt-3 text-sm leading-7">{project.role ?? "Website development"}</p>{project.stack?.length ? <><p className="eyebrow mt-6">Built with</p><div className="mt-3 flex flex-wrap gap-2">{project.stack.map(x=><span key={x} className="rounded-full bg-muted px-3 py-1 text-xs">{x}</span>)}</div></>:null}<p className="eyebrow mt-6">Status</p><p className="mt-2 text-sm capitalize">{project.status}</p></aside></div><div className="mt-16 max-w-3xl divide-y divide-border border-t border-border">{sections.map(([label,value])=>value?<section key={label} className="py-8"><h2 className="font-display text-3xl">{label}</h2><p className="mt-4 whitespace-pre-wrap text-base leading-8 text-muted-foreground">{value}</p></section>:null)}</div><section className="mt-8 flex flex-wrap items-center justify-between gap-5 rounded-xl bg-muted p-8"><h2 className="font-display text-2xl">Need something like this?</h2><Link href={`/contact?project=${encodeURIComponent(project.title ?? project.slug)}`} className="text-link">Discuss your project <ArrowUpRight size={17}/></Link></section></main>;
 }

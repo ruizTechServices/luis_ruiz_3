@@ -1,99 +1,43 @@
 import Link from "next/link";
-
-import {
-  PortfolioCard,
-  PortfolioCardContent,
-  PortfolioCardDescription,
-  PortfolioCardHeader,
-  PortfolioCardTitle,
-} from "@/components/home/portfolio-card";
+import { ArrowDown, ArrowRight, ArrowUpRight, Braces, Workflow, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { firstParagraph, formatDate } from "@/lib/data/format";
+import { ProjectCard } from "@/components/projects/project-card";
+import { PostList } from "@/components/content/post-list";
 import { getHomeContent } from "@/lib/public-content/data";
+import { pageMetadata } from "@/lib/seo/metadata";
 
+export const metadata = pageMetadata("Web Developer & Independent Builder", "I'm Luis Ruiz, a New York developer and founder of ruizTechServices. Explore my web projects, AI experiments, and build notes—or discuss your next project.", "/");
+const services = [
+  { icon: Braces, title: "A website that does its job.", description: "Clear, responsive websites that explain your offer and give customers a straightforward next step.", link: "Discuss a website", value: "Build a website or app" },
+  { icon: Wrench, title: "Get past a website blocker.", description: "Bring the bug, broken flow, or unfinished feature. We’ll define a focused scope and what a successful fix looks like.", link: "Tell me what’s broken", value: "Fix or improve a website" },
+  { icon: Workflow, title: "Make repetitive work easier.", description: "Practical tools, integrations, and AI prototypes built around a specific task—with room to test and improve.", link: "Explore an idea", value: "AI integration or automation" },
+];
 export default async function Home() {
   const { settings, projects, posts } = await getHomeContent();
-
-  return (
-    <main className="mx-auto grid min-h-screen w-full max-w-5xl content-start gap-10 px-6 py-16">
-      <section className="grid gap-4">
-        <p className="text-sm font-medium text-muted-foreground">
-          {settings?.availability_text ?? "Available for selected work"}
-        </p>
-        <h1 className="max-w-3xl text-4xl font-semibold tracking-normal text-foreground">
-          Luis Ruiz&apos;s Portfolio
-        </h1>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild>
-            <Link href="/projects">Projects</Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/blog">Blog</Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/contact">Contact</Link>
-          </Button>
-        </div>
-      </section>
-
-      <section className="grid gap-4">
-        <div className="flex items-end justify-between gap-4">
-          <h2 className="text-xl font-semibold tracking-normal">Featured projects</h2>
-          <Link className="text-sm font-medium text-primary hover:underline" href="/projects">
-            View all
-          </Link>
-        </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          {projects.length > 0 ? (
-            projects.map((project) => (
-              <PortfolioCard className="max-w-none" key={project.id}>
-                <PortfolioCardHeader>
-                  <PortfolioCardTitle>{project.title ?? project.slug}</PortfolioCardTitle>
-                  <PortfolioCardDescription>
-                    {firstParagraph(project.summary ?? project.description)}
-                  </PortfolioCardDescription>
-                </PortfolioCardHeader>
-                <PortfolioCardContent>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/projects/${project.slug}`}>Open</Link>
-                  </Button>
-                </PortfolioCardContent>
-              </PortfolioCard>
-            ))
-          ) : (
-            <p className="text-sm text-muted-foreground">No featured projects yet.</p>
-          )}
-        </div>
-      </section>
-
-      <section className="grid gap-4">
-        <div className="flex items-end justify-between gap-4">
-          <h2 className="text-xl font-semibold tracking-normal">Recent posts</h2>
-          <Link className="text-sm font-medium text-primary hover:underline" href="/blog">
-            View all
-          </Link>
-        </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          {posts.length > 0 ? (
-            posts.map((post) => (
-              <PortfolioCard className="max-w-none" key={post.id}>
-                <PortfolioCardHeader>
-                  <PortfolioCardTitle>{post.title ?? `Post ${post.id}`}</PortfolioCardTitle>
-                  <PortfolioCardDescription>{formatDate(post.created_at)}</PortfolioCardDescription>
-                </PortfolioCardHeader>
-                <PortfolioCardContent>
-                  <p className="mb-4 text-muted-foreground">{firstParagraph(post.summary)}</p>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/blog/${post.id}`}>Read</Link>
-                  </Button>
-                </PortfolioCardContent>
-              </PortfolioCard>
-            ))
-          ) : (
-            <p className="text-sm text-muted-foreground">No posts yet.</p>
-          )}
-        </div>
-      </section>
-    </main>
-  );
+  return <main id="main-content">
+    <section className="site-container relative grid gap-12 pb-16 pt-16 md:grid-cols-[1.3fr_.7fr] md:gap-14 md:pb-20 md:pt-24">
+      <div>
+        <p className="eyebrow mb-7 flex items-center gap-3"><span className={`size-2 rounded-full ${settings?.availability ? "bg-primary" : "bg-muted-foreground"}`} />{settings?.availability_text || "New York · Independent developer"}</p>
+        <h1 className="font-display max-w-3xl text-[clamp(3.4rem,6.5vw,6rem)] leading-[1.03] tracking-[-.045em]">Thoughtful code.<br />Useful things.<br /><span className="italic text-primary">Built by Gio.</span></h1>
+        <p className="mt-7 max-w-xl text-base leading-8 text-muted-foreground sm:text-lg">I’m Luis Ruiz, a New York web developer and founder of <a href="https://www.ruiztechservices.com" className="text-foreground underline decoration-border underline-offset-4">ruizTechServices</a>. I build websites, explore AI, and turn everyday problems into working software.</p>
+        <div className="mt-8 flex flex-wrap items-center gap-4"><Button asChild size="lg" className="h-12 rounded-full px-6"><Link href="/contact">Let’s work together <ArrowUpRight size={17} /></Link></Button><Link href="#selected-work" className="flex items-center gap-2 px-2 py-3 text-sm font-medium">Explore my work <ArrowDown size={15} /></Link></div>
+        <p className="mt-7 font-mono text-[10px] uppercase tracking-[.15em] text-muted-foreground">Based in the Bronx · Working in English & Spanish</p>
+      </div>
+      <aside className="builder-note relative self-center rounded-2xl border border-[#cdd5c4] bg-[#e9eddf] p-7 sm:p-9">
+        <div className="mb-9 flex items-center justify-between"><span className="eyebrow">From the workbench</span><span className="font-mono text-xs text-primary">LR / 01</span></div>
+        <div aria-hidden="true" className="mb-8 flex h-36 items-center justify-center"><div className="builder-orbit"><span className="font-display text-7xl italic text-primary">lr.</span><span className="orbit-point" /></div></div>
+        <h2 className="font-display text-3xl leading-tight">The work is<br />the introduction.</h2>
+        <p className="mt-4 text-sm leading-7 text-[#4c5846]">Real projects. Decisions explained. Lessons shared as I build.</p>
+        <div className="mt-7 grid grid-cols-2 gap-4 border-t border-[#c6cebc] pt-5"><div><p className="text-2xl font-medium">{projects.length.toString().padStart(2,"0")}</p><p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-[#53604b]">Selected projects</p></div><div><p className="text-2xl font-medium">↗</p><Link href="/blog" className="mt-1 block font-mono text-[10px] uppercase tracking-wider text-[#53604b] hover:underline">Open build notes</Link></div></div>
+      </aside>
+    </section>
+    <div className="border-y border-border"><div className="site-container flex flex-wrap items-center justify-between gap-x-8 gap-y-4 py-5"><span className="eyebrow">Tools I build with</span>{["Next.js", "TypeScript", "React", "Supabase", "AI APIs"].map(name => <span key={name} className="text-sm font-medium text-muted-foreground">{name}</span>)}</div></div>
+    <section className="site-container py-16 sm:py-24" id="selected-work">
+      <div className="section-heading"><div><p className="eyebrow mb-3">01 / Selected work</p><h2 className="font-display text-4xl sm:text-5xl">Less telling. More showing.</h2></div><Link href="/projects" className="text-link">All projects <ArrowUpRight size={17} /></Link></div>
+      <div className="mt-9 grid gap-6 md:grid-cols-3">{projects.map((project,index) => <ProjectCard key={project.id} project={project} index={index} />)}</div>
+    </section>
+    <section className="border-y border-border bg-[#eef0e8]" id="work-together"><div className="site-container py-16 sm:py-20"><p className="eyebrow mb-3">02 / How I can help</p><h2 className="font-display max-w-xl text-4xl sm:text-5xl">A practical next step<br />for your next big thing.</h2><div className="mt-10 grid gap-8 md:grid-cols-3">{services.map(({icon:Icon,...service}) => <article key={service.title} className="flex flex-col border-t border-[#cbd1c4] pt-6"><Icon size={25} strokeWidth={1.3} className="mb-6 text-primary" /><h3 className="text-lg font-semibold">{service.title}</h3><p className="mt-3 flex-1 text-sm leading-7 text-muted-foreground">{service.description}</p><Link href={`/contact?service=${encodeURIComponent(service.value)}`} className="text-link mt-6">{service.link} <ArrowUpRight size={16} /></Link></article>)}</div></div></section>
+    <section className="site-container py-16 sm:py-24"><div className="section-heading"><div><p className="eyebrow mb-3">03 / The notebook</p><h2 className="font-display text-4xl sm:text-5xl">Learning out loud.</h2></div><Link href="/blog" className="text-link">All writing <ArrowUpRight size={17} /></Link></div><p className="mb-8 mt-4 text-muted-foreground">Build notes, technical experiments, and a few things on my mind.</p><PostList posts={posts} /></section>
+    <section className="site-container pb-20"><div className="grid gap-8 rounded-2xl bg-primary px-7 py-12 text-primary-foreground md:grid-cols-[1fr_auto] md:items-center md:px-12"><div><p className="mb-4 font-mono text-[10px] uppercase tracking-[.18em] text-white/70">Have something in mind?</p><h2 className="font-display text-4xl sm:text-5xl">Let’s make it work.</h2><p className="mt-4 max-w-lg text-sm leading-7 text-white/80">Tell me what you need, what’s getting in the way, and where you want to go. We’ll start with a clear conversation.</p></div><Link href="/contact" className="inline-flex w-fit items-center gap-6 rounded-full bg-[#f7f7f2] px-6 py-4 text-sm font-semibold text-primary">Start a conversation <ArrowRight size={18} /></Link></div></section>
+  </main>;
 }

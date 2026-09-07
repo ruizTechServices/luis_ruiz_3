@@ -137,7 +137,7 @@ export async function buildPublicSitemapGroups(): Promise<PublicSitemapGroup[]> 
     },
     {
       title: "Projects",
-      description: "Public project detail pages generated from Supabase.",
+      description: "Explore the work and the thinking behind each project.",
       links: projects
         .filter((project): project is SitemapProject & { slug: string } => Boolean(project.slug))
         .map((project) => ({
@@ -150,7 +150,7 @@ export async function buildPublicSitemapGroups(): Promise<PublicSitemapGroup[]> 
     },
     {
       title: "Blog posts",
-      description: "Public articles and notes generated from Supabase.",
+      description: "Build notes, experiments, and ideas from the notebook.",
       links: posts.map((post) => ({
         href: `/blog/${post.id}`,
         label: post.title ?? `Post ${post.id}`,
@@ -183,6 +183,7 @@ async function getSitemapBlogPosts(): Promise<SitemapBlogPost[]> {
   const { data, error } = await supabase
     .from("blog_posts")
     .select("id, title, summary, created_at")
+    .eq("status", "published")
     .order("created_at", { ascending: false });
 
   if (error) {

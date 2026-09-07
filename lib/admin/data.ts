@@ -51,7 +51,7 @@ export async function getAdminRows(slug: string): Promise<{
 
 async function countTable(table: string): Promise<number> {
   const supabase = await createClient();
-  const { count, error } = await dynamicTable(supabase, table).select("*", {
+  const { count, error } = await dynamicTable(supabase, table).select("id", {
     count: "exact",
     head: true,
   });

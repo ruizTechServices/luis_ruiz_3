@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { AuthForm } from "@/components/auth/auth-form";
 import { getSafeRedirectPath } from "@/lib/auth/routes";
 
@@ -6,6 +7,8 @@ interface LoginPageProps {
     next?: string;
   }>;
 }
+
+export const metadata: Metadata = { title: "Sign in", robots: { index: false, follow: false } };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;

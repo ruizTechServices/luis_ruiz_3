@@ -2,40 +2,43 @@
 
 import { revalidatePath } from "next/cache";
 
-import { readBoolean, readOptionalString, readString, type ActionState } from "@/lib/data/form";
-import { createClient } from "@/lib/supabase/server";
+import { z } from "zod";
+
+import { saveContactInquiry } from "@/lib/contact/mutations";
+import { contactSchema, type ContactActionState } from "@/lib/contact/schema";
+
+const successState: ContactActionState = {
+  status: "success",
+  message: "Your project note is in my inbox. I’ll review the details and follow up by email about the next step.",
+};
 
 export async function submitContact(
-  _state: ActionState,
+  _state: ContactActionState,
   formData: FormData,
-): Promise<ActionState> {
-  const fullName = readString(formData, "full_name");
-  const email = readString(formData, "email");
-  const message = readString(formData, "message");
-
-  if (!fullName || !email || !message) {
-    return { message: "Name, email, and message are required." };
+): Promise<ContactActionState> {
+  // Bots that fill the offscreen field receive the same response without a write.
+  if (formData.get("website_url")) {
+    return successState;
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.from("contactlist").insert({
-    full_name: fullName,
-    email,
-    message,
-    phone: readOptionalString(formData, "phone"),
-    company: readOptionalString(formData, "company"),
-    subject: readOptionalString(formData, "subject"),
-    budget: readOptionalString(formData, "budget"),
-    timeline: readOptionalString(formData, "timeline"),
-    preferred_contact: readOptionalString(formData, "preferred_contact"),
-    newsletter: readBoolean(formData, "newsletter"),
+  const parsed = contactSchema.safeParse({
+    full_name: formData.get("full_name"),
+    email: formData.get("email"),
+    subject: formData.get("subject"),
+    message: formData.get("message"),
+    budget: formData.get("budget") ?? "",
+    timeline: formData.get("timeline") ?? "",
   });
 
-  if (error) {
-    return { message: "Could not submit the contact request." };
+  if (!parsed.success) {
+    return { status: "error", message: "Check the highlighted fields and try again.", errors: z.flattenError(parsed.error).fieldErrors };
   }
 
-  revalidatePath("/contact");
+  if (!(await saveContactInquiry(parsed.data))) {
+    return { status: "error", message: "Your note couldn’t be saved. Your details are still here — please try again shortly." };
+  }
 
-  return { message: "Submitted." };
+  revalidatePath("/admin/contactlist");
+  revalidatePath("/dashboard");
+  return successState;
 }
