@@ -33,6 +33,28 @@ function DateTimeInput({ name, label, value, required, hint }: DateTimeFieldProp
   const local = editedLocal ?? (hydrated && instant ? localInputValue(instant) : "");
   const zone = hydrated ? Intl.DateTimeFormat().resolvedOptions().timeZone : null;
 
+  function syncInput(input: HTMLInputElement) {
+    const next = input.value;
+    setEditedLocal(next);
+    if (!next) {
+      input.setCustomValidity("");
+      setInstant("");
+      return;
+    }
+    const date = new Date(next);
+    if (Number.isNaN(date.getTime())) {
+      input.setCustomValidity("Choose a valid date and time.");
+      return;
+    }
+    const normalized = date.toISOString();
+    if (localInputValue(normalized) !== next) {
+      input.setCustomValidity("This local time does not exist because the clocks change. Choose a different time.");
+      return;
+    }
+    input.setCustomValidity("");
+    setInstant(normalized);
+  }
+
   return <label className="grid min-w-0 gap-1 text-sm">
     <span className="font-medium">{label}</span>
     <input type="hidden" name={name} value={instant} />
@@ -42,27 +64,10 @@ function DateTimeInput({ name, label, value, required, hint }: DateTimeFieldProp
       required={required}
       disabled={zone === null}
       className="min-w-0 w-full rounded-md border border-input bg-background px-3 py-2"
-      onChange={(event) => {
-        const next = event.target.value;
-        setEditedLocal(next);
-        if (!next) {
-          event.target.setCustomValidity("");
-          setInstant("");
-          return;
-        }
-        const date = new Date(next);
-        if (Number.isNaN(date.getTime())) {
-          event.target.setCustomValidity("Choose a valid date and time.");
-          return;
-        }
-        const normalized = date.toISOString();
-        if (localInputValue(normalized) !== next) {
-          event.target.setCustomValidity("This local time does not exist because the clocks change. Choose a different time.");
-          return;
-        }
-        event.target.setCustomValidity("");
-        setInstant(normalized);
-      }}
+      // Native date controls can emit input without React synthesizing change.
+      // Both paths must keep the submitted instant aligned with the visible value.
+      onInput={(event) => syncInput(event.currentTarget)}
+      onChange={(event) => syncInput(event.currentTarget)}
     />
     <span className="text-xs leading-5 text-muted-foreground">{zone ? `Your local time (${zone}).` : "Loading your local time…"}{hint ? ` ${hint}` : ""}</span>
   </label>;

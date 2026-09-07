@@ -196,3 +196,21 @@ The existing LR logo was uploaded through the production media form, converted t
 The earlier portfolio release used only a honeypot and validation for contact spam. The new workflow adds Edge ingestion, persistent rate limits, duplicate detection, a notification queue, and column-level intake restrictions. Release verification must confirm that Edge functions and migrations are applied before describing these as active in production. Verify both a legitimate submission and rejected direct database insertion after the public form has switched to the Edge function.
 
 The new inquiry UI has four executable regression checks covering permitted update fields, validation, due-date status semantics, filter IDs, and safe reply links. Its focused ESLint and TypeScript checks passed during implementation. Owner browser verification of this new inbox and the other new workflows belongs to the current release; the successful story/media walkthrough above documents the earlier release. Email delivery remains pending until sender setup and an actual received test are verified.
+
+
+## Growth workflow release — September 7, 2026
+
+PR #6 deployed the four workflow improvements from commit `126739b41da8e0ef086c7cceebabd2133ce99c9c` to the existing Vercel project and both production domains. Six additive/lockdown migrations were applied to the existing Supabase project; matching files use the actual remote migration versions. The final lockdown was applied only after the deployed contact form returned a successful production confirmation.
+
+Verified release behavior:
+
+- Production build, full lint, auth/sitemap gates, and 57 behavioral checks passed.
+- Anonymous preview and signed-in production contact forms saved labeled verification inquiries. The deployed endpoints rejected unauthorized, invalid-origin and malformed requests; honeypot submissions produced no records.
+- Rollback-only database checks passed for contact intake permissions, deduplication, all four quotas, notification leases/retries, measurement retention, and owner-only sound management.
+- Owner inbox status and private notes survived reload. The native date field was hardened to synchronize through both input and change events, with a follow-up browser check required for the correction.
+- A private story recovered after reload, restored explicitly, saved to the account and reloaded correctly. Only the synthetic draft was removed; the owner's existing draft 33 was preserved.
+- Owner WAV upload, preview, publication, public playback and archive all passed. A distinct MP3 draft exercised the server WASM decoder and loaded successfully in the browser. The original sixteen sounds remain unchanged.
+- Live measurement accepted a case-study event with an existing trailing-hyphen slug and ignored its replay. The one synthetic count and receipt were precisely removed. The owner report displayed honest empty initial totals.
+- Guarded content updates for projects 5, 6 and 14 were applied after screenshots deployed and sound management passed; source evidence and actual outcomes are recorded in the case-study notes.
+
+Email delivery remains the external setup dependency: cron and the worker heartbeat are active, but Resend provider credentials and a verified sender are not configured. No email was sent during this verification. Finish setup through the inbox's Connect email alerts instructions, then test actual receipt.
