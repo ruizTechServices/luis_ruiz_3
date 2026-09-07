@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Keep the Node/WASM decoder and its worker helper out of Turbopack's bundle.
+  // It is imported only by the owner upload route, after byte and duration limits.
+  serverExternalPackages: ["mpg123-decoder"],
   async redirects() {
     // Keep saved links from luis_ruiz_2 useful. Destination routes enforce auth.
     return [

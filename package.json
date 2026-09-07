@@ -9,7 +9,12 @@
     "lint": "eslint",
     "test:auth": "node scripts/verify-auth-flow.mjs",
     "test:sitemap": "node scripts/verify-sitemap.mjs",
-    "test:soundboard": "node --test scripts/verify-soundboard.mjs"
+    "test:soundboard": "node --test scripts/verify-soundboard.mjs",
+    "test:inquiries": "node --test scripts/verify-inquiries.mjs",
+    "test:inquiry-alerts": "node --test scripts/verify-inquiry-alerts.mjs",
+    "test:contact-ingestion": "node --test scripts/verify-contact-ingestion.mjs",
+    "test:site-measurement": "node --test scripts/verify-site-measurement.mjs",
+    "test:story-recovery": "node --test scripts/verify-story-recovery.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
@@ -19,6 +24,7 @@
     "clsx": "^2.1.1",
     "idb": "^8.0.3",
     "lucide-react": "^1.21.0",
+    "mpg123-decoder": "1.0.3",
     "next": "16.2.9",
     "radix-ui": "^1.6.0",
     "react": "19.2.4",

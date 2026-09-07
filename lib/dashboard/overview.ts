@@ -2,6 +2,7 @@ import "server-only";
 
 import { requireGioAdmin } from "@/lib/auth/admin";
 import type { AuthenticatedUser } from "@/lib/auth/session";
+import { ACTIVE_INQUIRY_STATUSES, type InquirySummary } from "@/lib/inquiries/types";
 import { createClient } from "@/lib/supabase/server";
 
 export interface RecentInquiry {
@@ -15,6 +16,9 @@ export interface GioOverview {
   stories: number | null;
   publicProjects: number | null;
   inquiries: number | null;
+  newInquiries: number | null;
+  dueInquiriesCount: number | null;
+  dueInquiries: InquirySummary[] | null;
   openTasks: number | null;
   recentInquiries: RecentInquiry[] | null;
 }
@@ -22,11 +26,13 @@ export interface GioOverview {
 export async function getGioOverview(): Promise<GioOverview> {
   await requireGioAdmin();
   const supabase = await createClient();
-  const [stories, projects, inquiries, tasks] = await Promise.all([
+  const [stories, projects, inquiries, tasks, newInquiries, dueInquiries] = await Promise.all([
     supabase.from("blog_posts").select("id", { count: "exact", head: true }),
     supabase.from("projects").select("id", { count: "exact", head: true }).eq("visibility", "public"),
-    supabase.from("contactlist").select("id, full_name, subject, created_at", { count: "exact" }).order("created_at", { ascending: false }).limit(3),
+    supabase.from("contactlist").select("id, full_name, subject, created_at", { count: "exact" }).in("status", [...ACTIVE_INQUIRY_STATUSES]).order("created_at", { ascending: false }).limit(3),
     supabase.from("todos").select("id", { count: "exact", head: true }).eq("is_completed", false),
+    supabase.from("contactlist").select("id", { count: "exact", head: true }).eq("status", "new"),
+    supabase.from("contactlist").select("id, created_at, updated_at, full_name, subject, company, status, follow_up_at", { count: "exact" }).in("status", [...ACTIVE_INQUIRY_STATUSES]).lte("follow_up_at", new Date().toISOString()).order("follow_up_at", { ascending: true }).limit(3),
   ]);
 
   // Failed reads are unavailable, never fabricated zero counts.
@@ -34,6 +40,9 @@ export async function getGioOverview(): Promise<GioOverview> {
     stories: stories.error ? null : stories.count,
     publicProjects: projects.error ? null : projects.count,
     inquiries: inquiries.error ? null : inquiries.count,
+    newInquiries: newInquiries.error ? null : newInquiries.count,
+    dueInquiriesCount: dueInquiries.error ? null : dueInquiries.count,
+    dueInquiries: dueInquiries.error ? null : (dueInquiries.data ?? []) as InquirySummary[],
     openTasks: tasks.error ? null : tasks.count,
     recentInquiries: inquiries.error ? null : (inquiries.data ?? []) as RecentInquiry[],
   };

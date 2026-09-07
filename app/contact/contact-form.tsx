@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
-import { useActionState, useState, type ChangeEvent } from "react";
+import { useActionState, useRef, useState, type ChangeEvent } from "react";
 
-import { submitContact } from "@/app/contact/actions";
+import { sendInquiry } from "@/lib/contact/submit";
+import { getInquirySource, measurementIsAllowed } from "@/lib/analytics/client";
 import { Button } from "@/components/ui/button";
 import type { ContactActionState, ContactField, ContactInput } from "@/lib/contact/schema";
 import { CONTACT_TOPICS } from "@/lib/contact/topics";
@@ -18,7 +19,11 @@ export function ContactForm({ initialTopic = "Not sure yet", initialMessage = ""
 }
 
 function ContactRequestForm({ onNewInquiry, initialTopic, initialMessage }: { onNewInquiry: () => void; initialTopic: ContactInput["subject"]; initialMessage: string }) {
-  const [state, action, pending] = useActionState(submitContact, initialState);
+  const requestId = useRef<string | null>(null);
+  const [state, action, pending] = useActionState(async (_state: ContactActionState, formData: FormData) => {
+    requestId.current ??= crypto.randomUUID();
+    return sendInquiry(formData, requestId.current, { allowed: measurementIsAllowed(), source: getInquirySource() });
+  }, initialState);
   // Controlled values survive validation and network failures without losing the note.
   const [values, setValues] = useState<ContactInput>({
     full_name: "", email: "", subject: initialTopic, message: initialMessage, budget: "", timeline: "",
@@ -29,8 +34,10 @@ function ContactRequestForm({ onNewInquiry, initialTopic, initialMessage }: { on
       id: `contact-${name}`,
       name,
       value: values[name],
-      onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-        setValues((current) => ({ ...current, [name]: event.target.value })),
+      onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        requestId.current = null;
+        setValues((current) => ({ ...current, [name]: event.target.value }));
+      },
       "aria-invalid": Boolean(state.errors?.[name]),
       "aria-describedby": state.errors?.[name] ? `contact-${name}-error` : undefined,
       className: inputClass,
@@ -107,7 +114,7 @@ function ContactRequestForm({ onNewInquiry, initialTopic, initialMessage }: { on
       {state.status === "error" ? <p className="rounded-lg border border-destructive/25 bg-destructive/5 p-3 text-sm text-destructive" role="alert">{state.message}</p> : null}
       <div className="grid gap-3">
         <Button className="h-12 w-full text-sm" disabled={pending} type="submit">{pending ? "Sending your note…" : "Send project inquiry"}<ArrowRight aria-hidden="true" className="size-4" /></Button>
-        <p className="text-center text-xs leading-relaxed text-muted-foreground">Sent privately to Gio. I’ll use your email to reply to this inquiry.</p>
+        <p className="text-center text-xs leading-relaxed text-muted-foreground">Sent privately to Gio. I’ll use your email to reply to this inquiry. <Link href="/privacy" className="underline underline-offset-4">Privacy &amp; measurement</Link></p>
       </div>
     </form>
   );

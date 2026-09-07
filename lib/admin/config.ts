@@ -91,11 +91,12 @@ export const ADMIN_TABLES = [
     slug: "contactlist",
     table: "contactlist",
     title: "Contact submissions",
-    description: "Private contact intake. Public users can insert only.",
+    description: "Private inquiry archive. Use the inquiry inbox to track status, notes, and follow-ups.",
     select:
       "id, created_at, full_name, email, phone, company, subject, budget, timeline, preferred_contact, newsletter, message",
     orderBy: "created_at",
     createDisabled: true,
+    readOnly: true,
     fields: [
       { name: "full_name", label: "Full name" },
       { name: "email", label: "Email" },

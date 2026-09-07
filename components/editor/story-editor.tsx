@@ -6,10 +6,11 @@ import { ArrowLeft, ArrowUpRight, Bold, Check, Code2, Eye, Heading2, ImagePlus, 
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { MarkdownContent } from "@/components/content/markdown";
+import { RecoveryCopies } from "@/components/editor/recovery-copies";
+import { useStoryRecovery } from "@/components/editor/use-story-recovery";
 import { saveStory } from "@/lib/editor/actions";
-import type { EditorStory, StoryInput, StoryStatus } from "@/lib/editor/types";
-
-type WritingFields = Pick<StoryInput, "title" | "summary" | "body" | "tags" | "references">;
+import { writingFields, type RecoveryEntry, type WritingFields } from "@/lib/editor/recovery";
+import type { EditorStory, StoryStatus } from "@/lib/editor/types";
 
 const FORMATTING_TOOLS = [
   { label: "Heading", icon: Heading2, before: "\n## ", after: "\n", placeholder: "Heading" },
@@ -21,11 +22,7 @@ const FORMATTING_TOOLS = [
   { label: "Code block", icon: Code2, before: "\n```javascript\n", after: "\n```\n", placeholder: "// Your code" },
 ];
 
-function writingFields(story: EditorStory | null): WritingFields {
-  return { title: story?.title ?? "", summary: story?.summary ?? "", body: story?.body ?? "", tags: story?.tags ?? "", references: story?.references ?? "" };
-}
-
-export function StoryEditor({ initialStory }: { initialStory: EditorStory | null }) {
+export function StoryEditor({ initialStory, ownerId }: { initialStory: EditorStory | null; ownerId: string }) {
   const router = useRouter();
   const [story, setStory] = useState(initialStory);
   const [fields, setFields] = useState(() => writingFields(initialStory));
@@ -33,8 +30,10 @@ export function StoryEditor({ initialStory }: { initialStory: EditorStory | null
   const [preview, setPreview] = useState(false);
   const [feedback, setFeedback] = useState<{ error: boolean; message: string } | null>(null);
   const [pending, startTransition] = useTransition();
+  const { recovery, snapshot: browserCopy } = useStoryRecovery(ownerId, initialStory);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
-  const dirty = JSON.stringify(fields) !== savedFields;
+  const serializedFields = JSON.stringify(fields);
+  const dirty = serializedFields !== savedFields;
   const dirtyRef = useRef(dirty);
   const words = fields.body.trim().split(/\s+/).filter(Boolean).length;
   const status = story?.status ?? "draft";
@@ -51,7 +50,8 @@ export function StoryEditor({ initialStory }: { initialStory: EditorStory | null
       if (!dirtyRef.current || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const anchor = (event.target as Element).closest<HTMLAnchorElement>("a[href]");
       if (!anchor || anchor.target === "_blank" || anchor.hasAttribute("download") || anchor.href === window.location.href || anchor.getAttribute("href")?.startsWith("#")) return;
-      if (!window.confirm("You have unsaved writing. Leave without saving?")) {
+      recovery.flush();
+      if (!window.confirm("Your latest writing is not saved to your account. Leave this editor?")) {
         event.preventDefault();
         event.stopPropagation();
       }
@@ -62,7 +62,7 @@ export function StoryEditor({ initialStory }: { initialStory: EditorStory | null
       window.removeEventListener("beforeunload", beforeUnload);
       document.removeEventListener("click", beforeNavigate, true);
     };
-  }, []);
+  }, [recovery]);
 
   useEffect(() => {
     if (bodyRef.current) {
@@ -72,8 +72,26 @@ export function StoryEditor({ initialStory }: { initialStory: EditorStory | null
   }, [fields.body, preview]);
 
   function update(field: keyof WritingFields, value: string) {
-    setFields((previous) => ({ ...previous, [field]: value }));
+    const next = { ...fields, [field]: value };
+    setFields(next);
+    dirtyRef.current = JSON.stringify(next) !== savedFields;
+    recovery.change(next);
     setFeedback(null);
+  }
+
+  function restore(entry: RecoveryEntry) {
+    if (pending || (dirty && !window.confirm("Replace the writing currently in this editor with this browser copy? Your current writing will be kept as a separate browser copy if storage is available."))) return;
+    recovery.flush();
+    const recovered = recovery.restore(entry);
+    if (!recovered) return;
+    setFields(recovered);
+    dirtyRef.current = JSON.stringify(recovered) !== savedFields;
+    setFeedback({ error: false, message: "Browser copy restored for review. Nothing has been saved to your account or published." });
+  }
+
+  function discard(entry: RecoveryEntry) {
+    if (pending || !window.confirm("Discard only this browser recovery copy? The story in your account and writing in other tabs will stay as they are.")) return;
+    recovery.discard(entry);
   }
 
   function format(before: string, after = "", placeholder = "text") {
@@ -94,6 +112,7 @@ export function StoryEditor({ initialStory }: { initialStory: EditorStory | null
     if (pending) return;
     if (status === "published" && nextStatus === "draft" && !window.confirm("Unpublish this story? It will disappear from your public site and remain a private draft.")) return;
     const submitted = { ...fields };
+    recovery.flush();
     startTransition(async () => {
       try {
         const result = await saveStory({ ...submitted, id: story?.id ?? null, expectedUpdatedAt: story?.updated_at ?? null, status: nextStatus });
@@ -101,6 +120,7 @@ export function StoryEditor({ initialStory }: { initialStory: EditorStory | null
           setFeedback({ error: true, message: result.message });
           return;
         }
+        recovery.confirmServerSave(result.story);
         setStory(result.story);
         const saved = writingFields(result.story);
         setFields(saved);
@@ -119,7 +139,7 @@ export function StoryEditor({ initialStory }: { initialStory: EditorStory | null
       <div className="sticky top-20 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-background/95 py-4 backdrop-blur-sm">
         <div className="flex items-center gap-4">
           <Link href="/dashboard/write" aria-label="Your stories" className="inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft size={16} /><span className="hidden sm:inline">Your stories</span></Link>
-          <span className="border-l border-border pl-4 text-xs text-muted-foreground" role="status" aria-live="polite">{pending ? "Saving…" : dirty ? "Unsaved changes" : story ? "All changes saved" : "New story"}</span>
+          <span className="max-w-56 border-l border-border pl-4 text-xs leading-5 text-muted-foreground" role="status" aria-live="polite">{pending ? "Saving to your account…" : dirty ? browserCopy.available && browserCopy.savedFields === serializedFields ? "Saved on this browser · not your account" : browserCopy.ready && !browserCopy.available ? "Unsaved · browser recovery unavailable" : "Saving on this browser…" : story ? "Saved to your account" : "New story"}</span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" onClick={() => setPreview(!preview)} aria-pressed={preview} className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm hover:bg-muted">{preview ? <PenLine size={15} /> : <Eye size={15} />}{preview ? "Write" : "Preview"}</button>
@@ -137,6 +157,10 @@ export function StoryEditor({ initialStory }: { initialStory: EditorStory | null
           <span className="inline-flex items-center gap-2">{status === "draft" ? <LockKeyhole size={14} /> : <Check size={14} />}{status === "draft" ? "Private draft · by Luis Ruiz" : "Published · by Luis Ruiz"}</span>
           <span>{words.toLocaleString("en-US")} words · {Math.max(1, Math.ceil(words / 220))} min read</span>
         </div>
+
+        <p className="mb-6 text-xs leading-6 text-muted-foreground">Browser recovery keeps a copy on this device as you write. Use Save draft or Publish to save to your account. {browserCopy.savedAt && dirty ? `Last browser copy: ${new Date(browserCopy.savedAt).toLocaleTimeString()}.` : null}</p>
+        {browserCopy.error && <div role="alert" className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm leading-6">{browserCopy.error}</div>}
+        <RecoveryCopies entries={browserCopy.entries} more={browserCopy.more} serverSavedAt={story?.updated_at ?? null} disabled={pending} onRestore={restore} onDiscard={discard} />
 
         {feedback && <div role={feedback.error ? "alert" : "status"} className={`mb-8 rounded-xl border p-4 text-sm leading-6 ${feedback.error ? "border-destructive/30 bg-destructive/5 text-destructive" : "border-border bg-muted"}`}>{feedback.message}{!feedback.error && story?.status === "published" && <Link href={`/blog/${story.id}`} target="_blank" className="ml-2 inline-flex items-center gap-1 font-medium underline">View story<ArrowUpRight size={13} /></Link>}</div>}
 
@@ -170,7 +194,7 @@ export function StoryEditor({ initialStory }: { initialStory: EditorStory | null
             <p id="topics-help" className="mt-2 text-xs leading-5 text-muted-foreground">Up to eight topics, separated by commas.</p>
           </div>
           {!preview && <div><label htmlFor="story-references" className="mb-2 block text-sm font-medium">Sources & further reading <span className="font-normal text-muted-foreground">(optional)</span></label><textarea id="story-references" name="references" value={fields.references} onChange={(event) => update("references", event.target.value)} maxLength={10_000} rows={3} placeholder="Add the links, documents, or sources behind your story." className="w-full resize-y rounded-xl border border-border bg-transparent p-4 text-sm leading-6 outline-none focus-visible:ring-2 focus-visible:ring-ring" /></div>}
-          <details className="text-sm text-muted-foreground"><summary className="cursor-pointer py-2">Writing tips</summary><p className="mt-2 leading-7">Lead with what you built or learned. Explain the problem, show your approach, and be honest about the result. The formatting buttons add headings, links, lists, quotes, and code; use Preview to see the finished story. Save your draft before leaving. Publishing makes the story visible to everyone.</p></details>
+          <details className="text-sm text-muted-foreground"><summary className="cursor-pointer py-2">Writing tips</summary><p className="mt-2 leading-7">Lead with what you built or learned. Explain the problem, show your approach, and be honest about the result. The formatting buttons add headings, links, lists, quotes, and code; use Preview to see the finished story. Save your draft before leaving. Publishing makes the story visible to everyone.</p><p className="mt-3 leading-7">Recovery copies are local to this browser and account. They can remain on this device after signing out, so write on a private device. Clearing browser data or closing a private browsing session can remove them. They do not sync between devices, and a browser crash can lose the latest unsaved keystrokes. Save draft keeps your writing in your account.</p></details>
         </fieldset>
       </div>
     </main>

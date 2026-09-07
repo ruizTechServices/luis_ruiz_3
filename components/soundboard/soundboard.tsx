@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
 import { Check, Copy, Headphones, Keyboard, LoaderCircle, Pause, Play, Search, Shuffle, Sparkles, Square, Star, Volume2, VolumeX, X } from "lucide-react";
 
+import { trackSoundPlay } from "@/lib/analytics/client";
 import { useAudioPlayer } from "@/components/soundboard/use-audio-player";
-import { SOUND_CLIPS, type SoundCategory } from "@/lib/soundboard/catalog";
+import { type SoundClip, type SoundCategory } from "@/lib/soundboard/catalog";
 import { dailySoundIndex, formatSoundTime, ignoreSoundShortcut, parseSoundPreferences, randomSoundIndex, readSoundPreferencesSnapshot, readUtcDate, serverSoundPreferencesSnapshot, serverUtcDate, subscribeSoundPreferences, subscribeUtcDate, updateSoundPreferences, type SoundPreferences } from "@/lib/soundboard/preferences";
 
 const FILTERS = ["All sounds", "Reactions", "Comedy", "Effects", "Favorites"] as const;
@@ -15,11 +17,17 @@ const CATEGORY_STYLES: Record<SoundCategory, string> = {
   Effects: "bg-stone-200/60 text-stone-700",
 };
 
-export function Soundboard({ initialSoundId }: { initialSoundId: string | null }) {
+export function SoundboardUnavailable() {
+  const router = useRouter();
+  return <section role="alert" className="rounded-2xl border border-border bg-card px-6 py-12 text-center"><h2 className="font-display text-3xl">A brief pause.</h2><p className="mt-4 text-sm leading-7 text-muted-foreground">The sound collection couldn’t load. Please try again in a moment.</p><button type="button" onClick={() => router.refresh()} className="mt-6 min-h-11 rounded-full border border-border px-5 py-3 text-sm font-medium hover:bg-muted">Try again</button></section>;
+}
+
+export function Soundboard({ clips, initialSoundId }: { clips: readonly SoundClip[]; initialSoundId: string | null }) {
   const snapshot = useSyncExternalStore(subscribeSoundPreferences, readSoundPreferencesSnapshot, serverSoundPreferencesSnapshot);
   const preferences = useMemo(() => parseSoundPreferences(snapshot), [snapshot]);
   const utcDate = useSyncExternalStore(subscribeUtcDate, readUtcDate, serverUtcDate);
-  const dailySound = utcDate ? SOUND_CLIPS[dailySoundIndex(utcDate, SOUND_CLIPS.length)] : null;
+  const dailyClips = clips.filter((clip) => clip.dailyPick !== false);
+  const dailySound = utcDate && dailyClips.length ? dailyClips[dailySoundIndex(utcDate, dailyClips.length)] : null;
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<SoundFilter>("All sounds");
   const [storageLimited, setStorageLimited] = useState(false);
@@ -29,28 +37,30 @@ export function Soundboard({ initialSoundId }: { initialSoundId: string | null }
   const savePreferences = useCallback((update: (value: SoundPreferences) => SoundPreferences) => {
     if (!updateSoundPreferences(update)) setStorageLimited(true);
   }, []);
-  const rememberPlayed = useCallback((id: string) => {
+  const rememberPlayed = useCallback((id: string, newPlay: boolean) => {
+    if (newPlay) trackSoundPlay();
     setShareMessage(null);
     setManualLink(null);
     savePreferences((current) => ({ ...current, recent: [id, ...current.recent.filter((item) => item !== id)].slice(0, 6) }));
   }, [savePreferences]);
-  const { audioRef, selected, phase, elapsed, duration, error, play, stop, togglePlayback, seek, events } = useAudioPlayer({ initialSoundId, volume: preferences.volume, muted: preferences.muted, onPlayed: rememberPlayed });
+  const { audioRef, selected, phase, elapsed, duration, error, play, stop, togglePlayback, seek, events } = useAudioPlayer({ clips, initialSoundId, volume: preferences.volume, muted: preferences.muted, onPlayed: rememberPlayed });
   const playing = phase === "playing";
   const loading = phase === "loading";
   const favoriteIds = useMemo(() => new Set(preferences.favorites), [preferences.favorites]);
-  const visibleSounds = SOUND_CLIPS.filter((sound) => {
+  const visibleSounds = clips.filter((sound) => {
     const matchesFilter = filter === "All sounds" || (filter === "Favorites" ? favoriteIds.has(sound.id) : sound.category === filter);
     return matchesFilter && `${sound.label} ${sound.category}`.toLowerCase().includes(query.trim().toLowerCase());
   });
   const recentSounds = preferences.recent.flatMap((id) => {
-    const sound = SOUND_CLIPS.find((clip) => clip.id === id);
+    const sound = clips.find((clip) => clip.id === id);
     return sound ? [sound] : [];
   });
 
   const playRandom = useCallback(() => {
-    const index = randomSoundIndex(SOUND_CLIPS.map((sound) => sound.id), selected?.id ?? null);
-    void play(SOUND_CLIPS[index]);
-  }, [play, selected]);
+    if (!clips.length) return;
+    const index = randomSoundIndex(clips.map((sound) => sound.id), selected?.id ?? null);
+    void play(clips[index]);
+  }, [clips, play, selected]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -60,13 +70,13 @@ export function Soundboard({ initialSoundId }: { initialSoundId: string | null }
       else if (key === " " && selected) { event.preventDefault(); togglePlayback(); }
       else if (key === "0") { event.preventDefault(); playRandom(); }
       else {
-        const sound = SOUND_CLIPS.find((clip) => clip.hotkey.toLowerCase() === key);
+        const sound = clips.find((clip) => clip.hotkey && clip.hotkey.toLowerCase() === key);
         if (sound) { event.preventDefault(); void play(sound); }
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [play, playRandom, preferences.keyboardEnabled, selected, stop, togglePlayback]);
+  }, [clips, play, playRandom, preferences.keyboardEnabled, selected, stop, togglePlayback]);
 
   function toggleFavorite(id: string) {
     savePreferences((current) => ({ ...current, favorites: current.favorites.includes(id) ? current.favorites.filter((item) => item !== id) : [...current.favorites, id] }));
@@ -94,8 +104,8 @@ export function Soundboard({ initialSoundId }: { initialSoundId: string | null }
     <div className="space-y-8 pb-8">
       <audio ref={audioRef} preload="none" {...events} />
 
-      <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
-        <section aria-labelledby="daily-sound-heading" className="relative overflow-hidden rounded-2xl bg-primary p-6 text-primary-foreground sm:p-8">
+      {clips.length > 0 && <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
+        <section aria-labelledby="daily-sound-heading" hidden={dailyClips.length === 0} className="relative overflow-hidden rounded-2xl bg-primary p-6 text-primary-foreground sm:p-8">
           <div className="relative z-10 flex h-full flex-col justify-between gap-7 sm:flex-row sm:items-center">
             <div><p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.17em] text-white/65"><Sparkles aria-hidden="true" size={14} /> A fresh pick, every day</p><h2 id="daily-sound-heading" className="mt-4 font-display text-3xl sm:text-4xl">{dailySound?.label ?? "Today’s sound"}</h2><p className="mt-3 text-sm text-white/70">A tiny break from being productive. You’re welcome.</p></div>
             <button type="button" onClick={() => dailySound && void play(dailySound)} disabled={!dailySound} className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 self-start rounded-full bg-primary-foreground px-5 py-3 text-sm font-semibold text-primary transition hover:bg-white active:scale-[0.97] disabled:opacity-50 sm:self-center"><Play aria-hidden="true" size={15} fill="currentColor" /> Play today’s pick</button>
@@ -106,12 +116,12 @@ export function Soundboard({ initialSoundId }: { initialSoundId: string | null }
           <div><p className="font-mono text-[10px] uppercase tracking-[0.17em] text-amber-950/60">Leave it to chance</p><h2 className="mt-4 font-display text-3xl text-amber-950">Surprise me.</h2><p className="mt-3 text-sm leading-6 text-amber-950/70">One button. A different sound. See what happens.</p></div>
           <button type="button" onClick={playRandom} className="inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-full border border-amber-950/25 px-5 py-3 text-sm font-medium text-amber-950 transition hover:bg-amber-950/5 active:scale-[0.97]"><Shuffle aria-hidden="true" size={16} /> Play a random sound <kbd className="ml-2 rounded border border-amber-950/20 px-1.5 text-[10px]">0</kbd></button>
         </section>
-      </div>
+      </div>}
 
       <section aria-label="Choose your sounds" className="space-y-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="relative w-full lg:max-w-sm"><Search aria-hidden="true" size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" /><label className="sr-only" htmlFor="sound-search">Search sounds</label><input id="sound-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find your sound…" className="min-h-12 w-full rounded-xl border border-border bg-card pl-11 pr-12 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/40" />{query && <button type="button" aria-label="Clear search" onClick={() => setQuery("")} className="absolute right-0.5 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground"><X size={16} /></button>}</div>
-          <div className="flex flex-wrap items-center gap-1.5" aria-label="Filter sounds">{FILTERS.map((item) => <button type="button" key={item} onClick={() => setFilter(item)} aria-pressed={filter === item} className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 py-2 text-sm transition ${filter === item ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>{item === "Favorites" && <Star aria-hidden="true" size={14} />}{item}{item === "Favorites" && <span className="font-mono text-xs opacity-70">{preferences.favorites.length}</span>}</button>)}</div>
+          <div className="flex flex-wrap items-center gap-1.5" aria-label="Filter sounds">{FILTERS.map((item) => <button type="button" key={item} onClick={() => setFilter(item)} aria-pressed={filter === item} className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 py-2 text-sm transition ${filter === item ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>{item === "Favorites" && <Star aria-hidden="true" size={14} />}{item}{item === "Favorites" && <span className="font-mono text-xs opacity-70">{clips.filter((clip) => favoriteIds.has(clip.id)).length}</span>}</button>)}</div>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-muted-foreground" role="status">{visibleSounds.length} {visibleSounds.length === 1 ? "sound" : "sounds"}{filter === "All sounds" && !query ? ". Zero serious reasons required." : " in this view."}</p><p className="text-xs text-muted-foreground">Tap to play. Tap again to restart.</p></div>
@@ -125,9 +135,9 @@ export function Soundboard({ initialSoundId }: { initialSoundId: string | null }
               const favorite = favoriteIds.has(sound.id);
               return (
                 <div key={sound.id} className={`group relative rounded-2xl border transition ${active ? "border-primary bg-primary text-primary-foreground shadow-[0_5px_0_0_#163723]" : "border-[#d7dccd] bg-card shadow-[0_5px_0_0_#e1e4d9] hover:border-primary/40 hover:shadow-[0_7px_0_0_#d8decf]"}`}>
-                  <button type="button" onClick={() => void play(sound)} aria-label={`${active ? "Restart" : "Play"} ${sound.label}, shortcut ${sound.hotkey}`} aria-pressed={active} className="flex min-h-44 w-full flex-col items-start justify-between rounded-2xl p-4 text-left outline-none transition-transform active:translate-y-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 sm:min-h-48 sm:p-5">
+                  <button type="button" onClick={() => void play(sound)} aria-label={`${active ? "Restart" : "Play"} ${sound.label}${sound.hotkey ? `, shortcut ${sound.hotkey}` : ""}`} aria-pressed={active} className="flex min-h-44 w-full flex-col items-start justify-between rounded-2xl p-4 text-left outline-none transition-transform active:translate-y-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 sm:min-h-48 sm:p-5">
                     <span className={`flex size-11 items-center justify-center rounded-xl ${active ? "bg-white/15 text-white" : CATEGORY_STYLES[sound.category]}`}>{isLoading ? <LoaderCircle aria-hidden="true" size={19} className="animate-spin" /> : isPlaying ? <PlayingBars /> : <Play aria-hidden="true" size={17} fill="currentColor" />}</span>
-                    <span className="mt-5 w-full"><span className="block pr-1 text-base font-semibold leading-snug sm:text-lg">{sound.label}</span><span className={`mt-3 flex w-full items-center justify-between gap-2 text-[10px] sm:text-xs ${active ? "text-white/65" : "text-muted-foreground"}`}><span>{sound.category} · {sound.durationSeconds < 1 ? "<1" : Math.round(sound.durationSeconds)}s</span><kbd className={`rounded-md border px-2 py-1 font-mono text-[10px] ${active ? "border-white/25 bg-white/10" : "border-border bg-background"}`}>{sound.hotkey}</kbd></span></span>
+                    <span className="mt-5 w-full"><span className="block pr-1 text-base font-semibold leading-snug sm:text-lg">{sound.label}</span><span className={`mt-3 flex w-full items-center justify-between gap-2 text-[10px] sm:text-xs ${active ? "text-white/65" : "text-muted-foreground"}`}><span>{sound.category} · {sound.durationSeconds < 1 ? "<1" : Math.round(sound.durationSeconds)}s</span>{sound.hotkey && <kbd className={`rounded-md border px-2 py-1 font-mono text-[10px] ${active ? "border-white/25 bg-white/10" : "border-border bg-background"}`}>{sound.hotkey}</kbd>}</span></span>
                   </button>
                   <button type="button" onClick={() => toggleFavorite(sound.id)} aria-label={`${favorite ? "Remove" : "Add"} ${sound.label} ${favorite ? "from" : "to"} favorites`} aria-pressed={favorite} className={`absolute right-2 top-2 flex size-11 items-center justify-center rounded-full transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${active ? "text-white/75 hover:bg-white/10 hover:text-white" : "text-muted-foreground hover:bg-muted hover:text-primary"}`}><Star aria-hidden="true" size={17} fill={favorite ? "currentColor" : "none"} /></button>
                 </div>
@@ -135,7 +145,7 @@ export function Soundboard({ initialSoundId }: { initialSoundId: string | null }
             })}
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-border px-6 py-14 text-center"><Star aria-hidden="true" className="mx-auto mb-4 text-muted-foreground" size={25} /><h3 className="font-display text-2xl">{filter === "Favorites" && !query ? "Keep the good ones close." : "Nothing on that frequency."}</h3><p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">{filter === "Favorites" && !query ? "Tap the star on any sound. Your favorites will be waiting here the next time you visit." : "Try a different name or show all sounds."}</p><button type="button" onClick={() => { setQuery(""); setFilter("All sounds"); }} className="mt-6 min-h-11 rounded-full border border-border px-5 py-3 text-sm font-medium hover:bg-muted">Show all sounds</button></div>
+          <div className="rounded-2xl border border-dashed border-border px-6 py-14 text-center"><Star aria-hidden="true" className="mx-auto mb-4 text-muted-foreground" size={25} /><h3 className="font-display text-2xl">{clips.length === 0 ? "A quiet moment." : filter === "Favorites" && !query ? "Keep the good ones close." : "Nothing on that frequency."}</h3><p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">{clips.length === 0 ? "There are no published sounds right now. Check back soon." : filter === "Favorites" && !query ? "Tap the star on any sound. Your favorites will be waiting here the next time you visit." : "Try a different name or show all sounds."}</p><button type="button" onClick={() => { setQuery(""); setFilter("All sounds"); }} className="mt-6 min-h-11 rounded-full border border-border px-5 py-3 text-sm font-medium hover:bg-muted">Show all sounds</button></div>
         )}
       </section>
 

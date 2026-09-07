@@ -33,7 +33,7 @@ export default async function DashboardPage() {
         <div>
           <p className="eyebrow">Your workspace</p>
           <h1 className="mt-4 font-display text-4xl tracking-tight sm:text-5xl">{isAdmin ? "Welcome back, Gio." : "Your dashboard."}</h1>
-          <p className="mt-4 max-w-xl leading-relaxed text-muted-foreground">{isAdmin ? "Write something useful. Show your work. Follow up on an opportunity." : "Keep your projects, contacts, and next steps in one place."}</p>
+          <p className="mt-4 max-w-xl leading-relaxed text-muted-foreground">{isAdmin ? "Check your inquiries. Choose one next action. Save or publish something useful." : "Keep your projects, contacts, and next steps in one place."}</p>
         </div>
         <Button asChild variant="outline"><Link href="/">View the website <ArrowUpRight aria-hidden="true" className="size-4" /></Link></Button>
       </header>
