@@ -1,4 +1,5 @@
 import "server-only";
+import { z } from "zod";
 
 import type { AuthenticatedUser } from "@/lib/auth/session";
 import { getDashboardPageConfig, type DashboardField, type DashboardPageConfig } from "@/lib/dashboard/data";
@@ -72,6 +73,10 @@ function readFieldValue(field: DashboardField, formData: FormData): string | num
 
   if (field.required && !value) {
     throw new Error(`${field.label} is required.`);
+  }
+
+  if (field.type === "timestamp" && value !== null && !z.iso.datetime({ offset: true }).safeParse(value).success) {
+    throw new Error(`${field.label} must include a valid date, time, and time zone.`);
   }
 
   if (field.type === "number" && value !== null) {

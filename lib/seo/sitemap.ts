@@ -51,6 +51,13 @@ const STATIC_ROUTES = [
     priority: 1,
   },
   {
+    path: "/about",
+    label: "About Gio",
+    description: "Meet the developer and founder behind the projects and build notes.",
+    changeFrequency: "monthly",
+    priority: 0.7,
+  },
+  {
     path: "/projects",
     label: "Projects",
     description: "Public portfolio index for shipped work, case studies, and active builds.",

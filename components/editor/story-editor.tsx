@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowUpRight, Bold, Check, Code2, Eye, Heading2, Italic, Link2, List, LoaderCircle, LockKeyhole, PenLine, Quote } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Bold, Check, Code2, Eye, Heading2, ImagePlus, Italic, Link2, List, LoaderCircle, LockKeyhole, PenLine, Quote } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { MarkdownContent } from "@/components/content/markdown";
@@ -155,6 +155,7 @@ export function StoryEditor({ initialStory }: { initialStory: EditorStory | null
             <textarea id="story-summary" name="summary" value={fields.summary} onChange={(event) => update("summary", event.target.value)} maxLength={500} rows={2} placeholder="Add a subtitle that makes someone want to keep reading…" className="mb-6 w-full resize-y border-0 bg-transparent text-xl leading-8 text-muted-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-ring" />
             <div className="mb-7 flex flex-wrap items-center gap-1 border-y border-border py-2" role="toolbar" aria-label="Story formatting">
               {FORMATTING_TOOLS.map(({ label, icon: Icon, before, after, placeholder }) => <button key={label} type="button" title={label} aria-label={label} onMouseDown={(event) => event.preventDefault()} onClick={() => format(before, after, placeholder)} className="flex size-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"><Icon size={17} /></button>)}
+              <Link href="/dashboard/media" target="_blank" rel="noopener noreferrer" title="Upload or copy an image (opens a new tab)" aria-label="Upload or copy an image (opens a new tab)" className="flex size-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"><ImagePlus size={17} /></Link>
               <span className="ml-auto px-2 text-xs text-muted-foreground">Select text to format</span>
             </div>
             <label htmlFor="story-body" className="sr-only">Story body</label>

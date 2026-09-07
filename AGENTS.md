@@ -7,6 +7,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ---
 
 # AGENTS.md — Project Briefing for AI Assistants
+
+> **Current release note — 2026-09-07:** Production is confirmed on Vercel project `luis-ruiz-3`, from `ruizTechServices/luis_ruiz_3`, at `https://www.luis-ruiz.com`. Keep `_3` as the active repository. The existing Supabase project `huyhgdsjpdjzokjwaspb` is accessible in this session; the older access-failure notes below describe prior sessions. Publishing and privacy migrations have been applied and verified with database role tests. Owner identity now comes from the confirmed `auth.users` record through `public.is_gio_admin()`, independent of profile roles. Read [the current operations guide](docs/portfolio-operations.md) for the story editor, daily dashboard, exact release checks, and the remaining owner browser verification. Historical notes below are context, not current deployment evidence.
+
 > Last updated: 2026-08-21 04:05 UTC
 > Maintained automatically by the nightly maintenance agent.
 > **Any LLM starting work on this project should read this file first.**

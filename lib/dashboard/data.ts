@@ -4,13 +4,14 @@ import type { AuthenticatedUser } from "@/lib/auth/session";
 import { dynamicTable } from "@/lib/supabase/dynamic-table";
 import { createClient } from "@/lib/supabase/server";
 
-export type DashboardFieldType = "text" | "textarea" | "number" | "date";
+export type DashboardFieldType = "text" | "textarea" | "number" | "date" | "timestamp";
 
 export interface DashboardField {
   name: string;
   label: string;
   type?: DashboardFieldType;
   required?: boolean;
+  hint?: string;
 }
 
 interface DashboardTable {
@@ -84,6 +85,7 @@ export const DASHBOARD_PAGE_TABLES = [
       { name: "problem", label: "Problem", type: "textarea" },
       { name: "budget", label: "Budget", type: "number" },
       { name: "status", label: "Status", required: true },
+      { name: "next_follow_up_at", label: "Next follow-up", type: "timestamp", hint: "Leave empty if unscheduled." },
       { name: "notes", label: "Notes", type: "textarea" },
     ],
   },

@@ -6,6 +6,7 @@ import {
   updateDashboardRecord,
 } from "@/app/(authenticated)/dashboard/actions";
 import { Button } from "@/components/ui/button";
+import { LocalDateTimeField } from "@/components/data/local-date-time-field";
 import type { AuthenticatedUser } from "@/lib/auth/session";
 import {
   getDashboardRows,
@@ -122,6 +123,10 @@ function DashboardFieldControl({
 }) {
   const sharedClassName = "rounded-md border border-input bg-background px-3 py-2";
 
+  if (field.type === "timestamp") {
+    return <LocalDateTimeField name={field.name} label={field.label} value={typeof value === "string" ? value : ""} required={field.required} hint={field.hint} />;
+  }
+
   if (field.type === "textarea") {
     return (
       <label className="grid gap-1 text-sm">
@@ -146,6 +151,7 @@ function DashboardFieldControl({
         required={field.required}
         type={field.type === "number" || field.type === "date" ? field.type : "text"}
       />
+      {field.hint ? <span className="text-xs leading-5 text-muted-foreground">{field.hint}</span> : null}
     </label>
   );
 }

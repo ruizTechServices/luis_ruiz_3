@@ -53,9 +53,9 @@ begin
   insert into public.projects (id, title, slug, url, visibility)
   values
     (private_id, 'Security verification fixture', 'portfolio-access-private-fixture',
-      'https://example.invalid/security-verification', 'private'),
+      'https://example.invalid/security-verification/private', 'private'),
     (unlisted_id, 'Security verification fixture', 'portfolio-access-unlisted-fixture',
-      'https://example.invalid/security-verification', 'unlisted');
+      'https://example.invalid/security-verification/unlisted', 'unlisted');
 
   perform set_config('request.jwt.claim.sub', owner_id::text, true);
   perform set_config('request.jwt.claims', jsonb_build_object('sub', owner_id, 'role', 'authenticated')::text, true);
@@ -101,5 +101,7 @@ begin
   execute 'reset role';
 end;
 $$;
+
+select 'PASS: owner identity, project visibility, comment privacy, profile grants' as access_verification;
 
 rollback;
