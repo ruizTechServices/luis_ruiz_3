@@ -51,6 +51,18 @@ Use **Copy story image** to get Markdown, paste it into the story body, and repl
 
 Publish evidence visitors can inspect: working links, a concise explanation, screenshots where useful, and honest outcomes. Avoid invented client results, revenue, testimonials, or experience claims. A redesign and search metadata alone do not guarantee more visitors or clients; share useful published work and follow up on real inquiries.
 
+## The public soundboard
+
+[Gio’s soundboard](https://www.luis-ruiz.com/soundboard) restores all 16 MP3s from the earlier site, including the previously unlisted **Fahhhhh** clip. It is linked from the homepage and main navigation and needs no account.
+
+- Tap a pad to play it; tapping again restarts it. One sound plays at a time.
+- Search by name or category, or filter to favorites. Stars, recent plays, volume, mute, and shortcut preferences stay in the visitor’s browser. They do not sync between devices or accounts.
+- Today’s pick rotates through the existing collection by UTC date. It does not represent a newly uploaded sound each day.
+- **Copy link** shares the selected sound through `?sound=<id>`. Opening a shared link selects the sound without starting playback.
+- Keyboard shortcuts use `1–9`, `Q W E R T Y U`, Space, Escape, and `0`. They can be disabled in the shortcut controls and pause while typing.
+
+The audio files live in `public/sounds/`; names, categories, shortcut keys, and measured durations live in `lib/soundboard/catalog.ts`. Add sounds through a normal source change and release; the dashboard media uploader accepts images. Keep existing IDs stable so favorites and shared links continue to work. The source commit and file hashes are recorded in [the soundboard provenance guide](soundboard-provenance.md). Do not remove these assets as unused: the catalog supplies their public URLs at runtime.
+
 ## Source and infrastructure
 
 - **Repository:** [ruizTechServices/luis_ruiz_3](https://github.com/ruizTechServices/luis_ruiz_3). This is the source for this portfolio; do not substitute another similarly named repository.
@@ -78,6 +90,7 @@ Open `http://localhost:3000`. Stop the development server before running the rel
 npm run lint
 npx tsc --noEmit
 npm run test:auth
+npm run test:soundboard
 npm run build
 npm run test:sitemap
 npm run start
